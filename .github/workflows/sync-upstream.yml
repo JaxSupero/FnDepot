@@ -1,11 +1,13 @@
 name: sync-upstream
 
-# veenyi/Fnos-Hermes-Studio 每天自动发版。FnDepot 客户端会对 sha256 强制校验，
-# 所以上游一有新 Release 就必须同步 fnpack.json，否则用户会看到"校验失败"。
+# veenyi/Fnos-Hermes-Studio 每天自动发版，而且会在**同一 tag 下重传同名 FPK**
+# （实测：v0.7.25-1 资产从 343501170 变为 343503444 字节、sha256 同步变化）。
+# 索引没跟上时，FnDepot 客户端按旧 size 判定，会报
+# 「下载大小不完整: expected=343501170 actual=343503444」。
+# 所以同步频率必须密过上游发版窗口：20 分钟一次，错开整点避开高峰。
 on:
   schedule:
-    # 每 4 小时一次；GitHub Actions 最小间隔 5 分钟，这里留足余量避开高峰
-    - cron: "17 */4 * * *"
+    - cron: "13,33,53 * * * *"
   workflow_dispatch:
     inputs:
       deep:
