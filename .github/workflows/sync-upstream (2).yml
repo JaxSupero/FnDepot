@@ -1,0 +1,113 @@
+name: sync-upstream
+
+# veenyi/Fnos-Hermes-Studio 每天自动发版，而且会在**同一 tag 下重传同名 FPK**
+# （实测：v0.7.25-1 资产从 343501170 变为 343503444 字节、sha256 同步变化）。
+# 索引没跟上时，FnDepot 客户端按旧 size 判定，会报
+# 「下载大小不完整: expected=343501170 actual=343503444」。
+# 所以同步频率必须密过上游发版窗口：20 分钟一次，错开整点避开高峰。
+#
+# ⚠ 实测坑（2026-09-29）：本工作流第一次上线时 schedule 从未被 GitHub armed。
+#   state=active、文件在默认分支、字节无误、Actions 权限正常，但 event=schedule
+#   的运行数恒为 0 —— 连最初 4 小时档位的 08:17Z / 12:17Z 也没跑过。
+#   也就是说 state=active 只表示"没被人手动停用"，它并不代表定时已经注册。
+#   按 GitHub 文档，改动 cron 表达式的那次提交才是"（重新）激活定时"的动作。
+#   若日后又长时间不触发，先改一下 cron（换分钟数即可）再观察一个档位。
+#   自查：python3 verify_schedule.py
+on:
+  schedule:
+    - cron: "7,27,47 * * * *"
+  workflow_dispatch:
+    inputs:
+      deep:
+        description: "实际下载每个 FPK 核对 sha256（较慢，约 330MB/版本）"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: sync-upstream
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: 生成并校验 fnpack.json
+        env:
+          # 自动从 git remote 推断仓库属主，无需手填
+          FNDEPOT_OWNER: ${{ github.repository_owner }}
+        run: |
+          if [ "${{ inputs.deep }}" = "true" ]; then
+            python3 gen_fnpack.py --verify --deep
+          else
+            python3 gen_fnpack.py --verify
+          fi
+
+      - name: 提交变更
+        run: |
+          if git diff --quiet -- fnpack.json; then
+            echo "无变化，上游暂无新版本。"
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add fnpack.json
+          LATEST=$(python3 -c "import json;d=json.load(open('fnpack.json'));print(sorted(d['apps']['hermes-studio']['releases'])[-1])")
+          git commit -m "chore: 同步 Hermes Studio $LATEST"
+          git push
+
+      - name: 源文件合规硬校验
+        # 无论是否提交，都对最终文件跑一次结构校验，防止不合规内容进入 main
+        run: |
+          python3 - <<'PY'
+          import json, re, sys
+          d = json.load(open("fnpack.json", encoding="utf-8"))
+          errs = []
+          if d.get("schema_version") != "2":
+              errs.append('schema_version 必须为字符串 "2"')
+          si = d.get("source_info") or {}
+          for k in ("name", "author"):
+              if not si.get(k):
+                  errs.append(f"source_info.{k} 缺失")
+              if re.search(r"fn\s*depot", str(si.get(k, "")), re.I):
+                  errs.append(f"source_info.{k} 不得含 'FnDepot'")
+          CATS = {"影音娱乐","系统工具","编程开发","AI赋能","生活服务",
+                  "智能智控","教育学习","游戏地带","硬件驱动"}
+          ARCH = {"all","x86","arm"}
+          for name, app in d["apps"].items():
+              if name != "hermes-studio":
+                  errs.append(f"appname {name} 与 FPK manifest 不符")
+              for k in ("display_name","desc","platform","categories","icon_url",
+                        "run_as","install_type","is_docker","releases"):
+                  if k not in app:
+                      errs.append(f"{name}: 缺必填字段 {k}")
+              if any(c not in CATS for c in app.get("categories", [])):
+                  errs.append(f"{name}: 非法分类")
+              if len(app.get("categories", [])) > 2:
+                  errs.append(f"{name}: 分类超过两个")
+              for p in app.get("platform", []):
+                  if p not in ARCH:
+                      errs.append(f"{name}: 非法 platform {p}")
+              for ver, r in app.get("releases", {}).items():
+                  for arch, p in (r.get("packages") or {}).items():
+                      if arch not in ARCH:
+                          errs.append(f"{name}.{ver}: 非法架构键 {arch}")
+                      if not re.fullmatch(r"[0-9a-f]{64}", str(p.get("sha256","")).lower()):
+                          errs.append(f"{name}.{ver}.{arch}: sha256 非法")
+                      if not isinstance(p.get("size"), int):
+                          errs.append(f"{name}.{ver}.{arch}: size 必须是整数")
+          if errs:
+              print("\n".join("FAIL: " + e for e in errs), file=sys.stderr)
+              sys.exit(1)
+          n = len(d["apps"]["hermes-studio"]["releases"])
+          print(f"合规校验通过：{n} 个版本")
+          PY
