@@ -1,7 +1,7 @@
 {
   "schema_version": "2",
   "source_info": {
-    "name": "JaxSupero 的 Hermes Studio 应用源",
+    "name": "JaxSupero",
     "author": "JaxSupero",
     "homepage": "https://github.com/JaxSupero/FnDepot",
     "description": "收录 veenyi/Fnos-Hermes-Studio 发布的 fnOS 原生 Hermes Studio FPK。"
