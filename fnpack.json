@@ -1,0 +1,149 @@
+{
+  "schema_version": "2",
+  "source_info": {
+    "name": "JaxSupero 的 Hermes Studio 应用源",
+    "author": "JaxSupero",
+    "homepage": "https://github.com/JaxSupero/FnDepot",
+    "description": "收录 veenyi/Fnos-Hermes-Studio 发布的 fnOS 原生 Hermes Studio FPK。"
+  },
+  "apps": {
+    "hermes-studio": {
+      "display_name": "Hermes Studio",
+      "desc": "Hermes Studio 是 Hermes Agent 的桌面 / Web 控制台与本地运行时，支持与 AI Agent 流式对话、管理模型与配置、接入多平台渠道、自动化任务、文件浏览器、Web 终端与本地数据持久化。<br/><br/><strong>核心能力：</strong><br/>• Agent 聊天：Socket.IO 流式运行 Hermes Agent，支持工具追踪与本地会话持久化<br/>• 本地控制台：集中管理 profiles、providers、models、凭证、记忆、技能、插件与日志<br/>• 自动化：配置平台渠道、cron 定时任务、看板任务、群聊房间与 MCP 服务器<br/>• 工作区工具：文件浏览器、Web 终端、语音输入输出与编码 Agent 运行器<br/><br/><strong>部署说明：</strong><br/>本包为官方预构建产物 + bundled node_modules 的非 Docker 打包，安装时离线复制预装依赖，不联网执行 npm install，启动后监听 8648 端口。",
+      "platform": [
+        "x86"
+      ],
+      "categories": [
+        "AI赋能",
+        "系统工具"
+      ],
+      "icon_url": "https://raw.githubusercontent.com/veenyi/Fnos-Hermes-Studio/main/ICON_256.PNG",
+      "preview_urls": [
+        "https://raw.githubusercontent.com/veenyi/Fnos-Hermes-Studio/main/preview/preview.png"
+      ],
+      "readme_url": "https://raw.githubusercontent.com/veenyi/Fnos-Hermes-Studio/main/README.md",
+      "bug_report_url": "https://github.com/veenyi/Fnos-Hermes-Studio/issues",
+      "maintainer": "EKKOLearnAI",
+      "maintainer_url": "https://github.com/EKKOLearnAI/hermes-studio",
+      "distributor": "veenyi",
+      "distributor_url": "https://github.com/veenyi/Fnos-Hermes-Studio",
+      "run_as": "package",
+      "install_type": "",
+      "is_docker": false,
+      "service_port": "8648",
+      "details_updated_at": "2026-09-29T08:51:50+00:00",
+      "releases": {
+        "0.7.25-1": {
+          "changelog": "Hermes Studio for fnOS — 稳定版 v0.7.25-1\n\n**打包追踪的上游版本**（由 auto-update.yml 自动对齐）：hermes-web-ui `0.7.25` ｜ hermes-agent `v2026.9.24`\n\n## 本次更新（v0.7.25-1）\n- 跟随官方 GitHub Release 预构建产物（EKKOLearnAI/hermes-studio）自动对齐 hermes-web-ui 版本，比 npm 发布更及时。\n- 内置 Hermes Agent 离线源码包（按 NousResearch/hermes-agent 最新 release 标签钉版本），安装时跳过 GitHub git clone，适合 NAS 弱网环境。\n- Agent browser tools + TUI 依赖预装进 FPK，首启跳过后台 npm install，启动更快。\n- bundled node 运行时不入库，CI 用 Node v24 编译含原生 node-pty，安装走离线复制，避免 fnOS 缺 gcc 导致安装卡死。\n- 安装前自动环境检查：Node.js、8648 端口占用、清理残留进程 / IPC socket / PID 文件、修复数据目录属主。\n\n> ⚠️ 若从旧版本升级仍异常，建议先 pkill -9 -f hermes 并卸载旧版后再重装。\n\n## 安装说明\n1. 飞牛应用中心 -> 手动安装 -> 选择本 fpk。\n2. 安装后首次启动会自动在后台安装 Hermes Agent（约 1-3 分钟），请稍候。\n3. 默认监听 8648 端口，点击应用图标在浏览器打开。\n\n固定版本请从本 Release 附件下载 fnos-hermes-studio_v0.7.25-1.fpk；\n最新滚动版见 Release latest。",
+          "updated_at": "2026-09-28T17:46:49Z",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/veenyi/Fnos-Hermes-Studio/releases/download/v0.7.25-1/fnos-hermes-studio_v0.7.25-1.fpk",
+              "sha256": "9f44e3a1ef13206b35943b9e0a42bdbf2d582301c69ce8ebd0bdc7c2252bf44f",
+              "size": 343503444
+            }
+          }
+        },
+        "0.7.24-2": {
+          "changelog": "Hermes Studio for fnOS — 稳定版 v0.7.24-2\n\n**打包追踪的上游版本**（由 auto-update.yml 自动对齐）：hermes-web-ui `0.7.24` ｜ hermes-agent `v2026.9.24`\n\n## 本次更新（v0.7.24-2）\n- 跟随官方 GitHub Release 预构建产物（EKKOLearnAI/hermes-studio）自动对齐 hermes-web-ui 版本，比 npm 发布更及时。\n- 内置 Hermes Agent 离线源码包（按 NousResearch/hermes-agent 最新 release 标签钉版本），安装时跳过 GitHub git clone，适合 NAS 弱网环境。\n- Agent browser tools + TUI 依赖预装进 FPK，首启跳过后台 npm install，启动更快。\n- bundled node 运行时不入库，CI 用 Node v24 编译含原生 node-pty，安装走离线复制，避免 fnOS 缺 gcc 导致安装卡死。\n- 安装前自动环境检查：Node.js、8648 端口占用、清理残留进程 / IPC socket / PID 文件、修复数据目录属主。\n\n> ⚠️ 若从旧版本升级仍异常，建议先 pkill -9 -f hermes 并卸载旧版后再重装。\n\n## 安装说明\n1. 飞牛应用中心 -> 手动安装 -> 选择本 fpk。\n2. 安装后首次启动会自动在后台安装 Hermes Agent（约 1-3 分钟），请稍候。\n3. 默认监听 8648 端口，点击应用图标在浏览器打开。\n\n固定版本请从本 Release 附件下载 fnos-hermes-studio_v0.7.24-2.fpk；\n最新滚动版见 Release latest。",
+          "updated_at": "2026-09-24T14:20:40Z",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/veenyi/Fnos-Hermes-Studio/releases/download/v0.7.24-2/fnos-hermes-studio_v0.7.24-2.fpk",
+              "sha256": "132f3dd8396b884d14084fb40b05733568f2989125bc1126bef38f2ad16522dd",
+              "size": 343242752
+            }
+          }
+        },
+        "0.7.24-1": {
+          "changelog": "Hermes Studio for fnOS — 稳定版 v0.7.24-1\n\n**打包追踪的上游版本**（由 auto-update.yml 自动对齐）：hermes-web-ui `0.7.24` ｜ hermes-agent `v2026.9.21`\n\n## 本次更新（v0.7.24-1）\n- 跟随官方 GitHub Release 预构建产物（EKKOLearnAI/hermes-studio）自动对齐 hermes-web-ui 版本，比 npm 发布更及时。\n- 内置 Hermes Agent 离线源码包（按 NousResearch/hermes-agent 最新 release 标签钉版本），安装时跳过 GitHub git clone，适合 NAS 弱网环境。\n- Agent browser tools + TUI 依赖预装进 FPK，首启跳过后台 npm install，启动更快。\n- bundled node 运行时不入库，CI 用 Node v24 编译含原生 node-pty，安装走离线复制，避免 fnOS 缺 gcc 导致安装卡死。\n- 安装前自动环境检查：Node.js、8648 端口占用、清理残留进程 / IPC socket / PID 文件、修复数据目录属主。\n\n> ⚠️ 若从旧版本升级仍异常，建议先 pkill -9 -f hermes 并卸载旧版后再重装。\n\n## 安装说明\n1. 飞牛应用中心 -> 手动安装 -> 选择本 fpk。\n2. 安装后首次启动会自动在后台安装 Hermes Agent（约 1-3 分钟），请稍候。\n3. 默认监听 8648 端口，点击应用图标在浏览器打开。\n\n固定版本请从本 Release 附件下载 fnos-hermes-studio_v0.7.24-1.fpk；\n最新滚动版见 Release latest。",
+          "updated_at": "2026-09-22T14:07:39Z",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/veenyi/Fnos-Hermes-Studio/releases/download/v0.7.24-1/fnos-hermes-studio_v0.7.24-1.fpk",
+              "sha256": "d4c17e62b1b871cbb36c7eb4ae9bea9bc466a348a96a6c2a3a8fb2de54aa2f51",
+              "size": 341973095
+            }
+          }
+        },
+        "0.7.23-2": {
+          "changelog": "Hermes Studio for fnOS — 稳定版 v0.7.23-2\n\n**打包追踪的上游版本**（由 auto-update.yml 自动对齐）：hermes-web-ui `0.7.23` ｜ hermes-agent `v2026.9.21`\n\n## 本次更新（v0.7.23-2）\n- 跟随官方 GitHub Release 预构建产物（EKKOLearnAI/hermes-studio）自动对齐 hermes-web-ui 版本，比 npm 发布更及时。\n- 内置 Hermes Agent 离线源码包（按 NousResearch/hermes-agent 最新 release 标签钉版本），安装时跳过 GitHub git clone，适合 NAS 弱网环境。\n- Agent browser tools + TUI 依赖预装进 FPK，首启跳过后台 npm install，启动更快。\n- bundled node 运行时不入库，CI 用 Node v24 编译含原生 node-pty，安装走离线复制，避免 fnOS 缺 gcc 导致安装卡死。\n- 安装前自动环境检查：Node.js、8648 端口占用、清理残留进程 / IPC socket / PID 文件、修复数据目录属主。\n\n> ⚠️ 若从旧版本升级仍异常，建议先 pkill -9 -f hermes 并卸载旧版后再重装。\n\n## 安装说明\n1. 飞牛应用中心 -> 手动安装 -> 选择本 fpk。\n2. 安装后首次启动会自动在后台安装 Hermes Agent（约 1-3 分钟），请稍候。\n3. 默认监听 8648 端口，点击应用图标在浏览器打开。\n\n固定版本请从本 Release 附件下载 fnos-hermes-studio_v0.7.23-2.fpk；\n最新滚动版见 Release latest。",
+          "updated_at": "2026-09-21T21:11:21Z",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/veenyi/Fnos-Hermes-Studio/releases/download/v0.7.23-2/fnos-hermes-studio_v0.7.23-2.fpk",
+              "sha256": "b2044361c97dbb6bfa462f2b8eb28e7b9ceac0a707a0ed2bca313b85270b896e",
+              "size": 341881890
+            }
+          }
+        },
+        "0.7.23-1": {
+          "changelog": "Hermes Studio for fnOS — 稳定版 v0.7.23-1\n\n**打包追踪的上游版本**（由 auto-update.yml 自动对齐）：hermes-web-ui `0.7.23` ｜ hermes-agent `v2026.9.14`\n\n## 本次更新（v0.7.23-1）\n- 跟随官方 GitHub Release 预构建产物（EKKOLearnAI/hermes-studio）自动对齐 hermes-web-ui 版本，比 npm 发布更及时。\n- 内置 Hermes Agent 离线源码包（按 NousResearch/hermes-agent 最新 release 标签钉版本），安装时跳过 GitHub git clone，适合 NAS 弱网环境。\n- Agent browser tools + TUI 依赖预装进 FPK，首启跳过后台 npm install，启动更快。\n- bundled node 运行时不入库，CI 用 Node v24 编译含原生 node-pty，安装走离线复制，避免 fnOS 缺 gcc 导致安装卡死。\n- 安装前自动环境检查：Node.js、8648 端口占用、清理残留进程 / IPC socket / PID 文件、修复数据目录属主。\n\n> ⚠️ 若从旧版本升级仍异常，建议先 pkill -9 -f hermes 并卸载旧版后再重装。\n\n## 安装说明\n1. 飞牛应用中心 -> 手动安装 -> 选择本 fpk。\n2. 安装后首次启动会自动在后台安装 Hermes Agent（约 1-3 分钟），请稍候。\n3. 默认监听 8648 端口，点击应用图标在浏览器打开。\n\n固定版本请从本 Release 附件下载 fnos-hermes-studio_v0.7.23-1.fpk；\n最新滚动版见 Release latest。",
+          "updated_at": "2026-09-18T13:43:25Z",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/veenyi/Fnos-Hermes-Studio/releases/download/v0.7.23-1/fnos-hermes-studio_v0.7.23-1.fpk",
+              "sha256": "f070213d5001bb19e10b3e24a380b7a6d62f015e17fb78c87cec8027c2294545",
+              "size": 334155047
+            }
+          }
+        },
+        "0.7.22-1": {
+          "changelog": "Hermes Studio for fnOS — 稳定版 v0.7.22-1\n\n**打包追踪的上游版本**（由 auto-update.yml 自动对齐）：hermes-web-ui `0.7.22` ｜ hermes-agent `v2026.9.14`\n\n## 本次更新（v0.7.22-1）\n- 跟随官方 GitHub Release 预构建产物（EKKOLearnAI/hermes-studio）自动对齐 hermes-web-ui 版本，比 npm 发布更及时。\n- 内置 Hermes Agent 离线源码包（按 NousResearch/hermes-agent 最新 release 标签钉版本），安装时跳过 GitHub git clone，适合 NAS 弱网环境。\n- Agent browser tools + TUI 依赖预装进 FPK，首启跳过后台 npm install，启动更快。\n- bundled node 运行时不入库，CI 用 Node v24 编译含原生 node-pty，安装走离线复制，避免 fnOS 缺 gcc 导致安装卡死。\n- 安装前自动环境检查：Node.js、8648 端口占用、清理残留进程 / IPC socket / PID 文件、修复数据目录属主。\n\n> ⚠️ 若从旧版本升级仍异常，建议先 pkill -9 -f hermes 并卸载旧版后再重装。\n\n## 安装说明\n1. 飞牛应用中心 -> 手动安装 -> 选择本 fpk。\n2. 安装后首次启动会自动在后台安装 Hermes Agent（约 1-3 分钟），请稍候。\n3. 默认监听 8648 端口，点击应用图标在浏览器打开。\n\n固定版本请从本 Release 附件下载 fnos-hermes-studio_v0.7.22-1.fpk；\n最新滚动版见 Release latest。",
+          "updated_at": "2026-09-16T06:06:50Z",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/veenyi/Fnos-Hermes-Studio/releases/download/v0.7.22-1/fnos-hermes-studio_v0.7.22-1.fpk",
+              "sha256": "8e15131fefc817dfbaf85b02b750b3a6f4d0ac70e8168691d4a79cb3e5529554",
+              "size": 334098719
+            }
+          }
+        },
+        "0.7.21-2": {
+          "changelog": "Hermes Studio for fnOS — 稳定版 v0.7.21-2\n\n**打包追踪的上游版本**（由 auto-update.yml 自动对齐）：hermes-web-ui `0.7.21` ｜ hermes-agent `v2026.9.14`\n\n## 本次更新（v0.7.21-2）\n- 跟随官方 GitHub Release 预构建产物（EKKOLearnAI/hermes-studio）自动对齐 hermes-web-ui 版本，比 npm 发布更及时。\n- 内置 Hermes Agent 离线源码包（按 NousResearch/hermes-agent 最新 release 标签钉版本），安装时跳过 GitHub git clone，适合 NAS 弱网环境。\n- Agent browser tools + TUI 依赖预装进 FPK，首启跳过后台 npm install，启动更快。\n- bundled node 运行时不入库，CI 用 Node v24 编译含原生 node-pty，安装走离线复制，避免 fnOS 缺 gcc 导致安装卡死。\n- 安装前自动环境检查：Node.js、8648 端口占用、清理残留进程 / IPC socket / PID 文件、修复数据目录属主。\n\n> ⚠️ 若从旧版本升级仍异常，建议先 pkill -9 -f hermes 并卸载旧版后再重装。\n\n## 安装说明\n1. 飞牛应用中心 -> 手动安装 -> 选择本 fpk。\n2. 安装后首次启动会自动在后台安装 Hermes Agent（约 1-3 分钟），请稍候。\n3. 默认监听 8648 端口，点击应用图标在浏览器打开。\n\n固定版本请从本 Release 附件下载 fnos-hermes-studio_v0.7.21-2.fpk；\n最新滚动版见 Release latest。",
+          "updated_at": "2026-09-14T21:02:49Z",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/veenyi/Fnos-Hermes-Studio/releases/download/v0.7.21-2/fnos-hermes-studio_v0.7.21-2.fpk",
+              "sha256": "0caf3892927056d220d32f8a1b0c2489ae2565c6c16ccc4619dc59b8a29aeaf0",
+              "size": 333169672
+            }
+          }
+        },
+        "0.7.21-1": {
+          "changelog": "Hermes Studio for fnOS — 稳定版 v0.7.21-1\n\n**打包追踪的上游版本**（由 auto-update.yml 自动对齐）：hermes-web-ui `0.7.21` ｜ hermes-agent `v2026.9.11`\n\n## 本次更新（v0.7.21-1）\n- 跟随官方 GitHub Release 预构建产物（EKKOLearnAI/hermes-studio）自动对齐 hermes-web-ui 版本，比 npm 发布更及时。\n- 内置 Hermes Agent 离线源码包（按 NousResearch/hermes-agent 最新 release 标签钉版本），安装时跳过 GitHub git clone，适合 NAS 弱网环境。\n- Agent browser tools + TUI 依赖预装进 FPK，首启跳过后台 npm install，启动更快。\n- bundled node 运行时不入库，CI 用 Node v24 编译含原生 node-pty，安装走离线复制，避免 fnOS 缺 gcc 导致安装卡死。\n- 安装前自动环境检查：Node.js、8648 端口占用、清理残留进程 / IPC socket / PID 文件、修复数据目录属主。\n\n> ⚠️ 若从旧版本升级仍异常，建议先 pkill -9 -f hermes 并卸载旧版后再重装。\n\n## 安装说明\n1. 飞牛应用中心 -> 手动安装 -> 选择本 fpk。\n2. 安装后首次启动会自动在后台安装 Hermes Agent（约 1-3 分钟），请稍候。\n3. 默认监听 8648 端口，点击应用图标在浏览器打开。\n\n固定版本请从本 Release 附件下载 fnos-hermes-studio_v0.7.21-1.fpk；\n最新滚动版见 Release latest。",
+          "updated_at": "2026-09-12T19:28:27Z",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/veenyi/Fnos-Hermes-Studio/releases/download/v0.7.21-1/fnos-hermes-studio_v0.7.21-1.fpk",
+              "sha256": "ae94e4127a88a2929be2ff629e3050ea43518c4d0f171b0ed721b0d07d99b218",
+              "size": 331529944
+            }
+          }
+        },
+        "0.7.20-1": {
+          "changelog": "Hermes Studio for fnOS — 稳定版 v0.7.20-1\n\n**打包追踪的上游版本**（由 auto-update.yml 自动对齐）：hermes-web-ui `0.7.20` ｜ hermes-agent `v2026.9.11`\n\n## 本次更新（v0.7.20-1）\n- 跟随官方 GitHub Release 预构建产物（EKKOLearnAI/hermes-studio）自动对齐 hermes-web-ui 版本，比 npm 发布更及时。\n- 内置 Hermes Agent 离线源码包（按 NousResearch/hermes-agent 最新 release 标签钉版本），安装时跳过 GitHub git clone，适合 NAS 弱网环境。\n- Agent browser tools + TUI 依赖预装进 FPK，首启跳过后台 npm install，启动更快。\n- bundled node 运行时不入库，CI 用 Node v24 编译含原生 node-pty，安装走离线复制，避免 fnOS 缺 gcc 导致安装卡死。\n- 安装前自动环境检查：Node.js、8648 端口占用、清理残留进程 / IPC socket / PID 文件、修复数据目录属主。\n\n> ⚠️ 若从旧版本升级仍异常，建议先 pkill -9 -f hermes 并卸载旧版后再重装。\n\n## 安装说明\n1. 飞牛应用中心 -> 手动安装 -> 选择本 fpk。\n2. 安装后首次启动会自动在后台安装 Hermes Agent（约 1-3 分钟），请稍候。\n3. 默认监听 8648 端口，点击应用图标在浏览器打开。\n\n固定版本请从本 Release 附件下载 fnos-hermes-studio_v0.7.20-1.fpk；\n最新滚动版见 Release latest。",
+          "updated_at": "2026-09-12T12:56:47Z",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/veenyi/Fnos-Hermes-Studio/releases/download/v0.7.20-1/fnos-hermes-studio_v0.7.20-1.fpk",
+              "sha256": "2e47468e155cfde3e708f40455b254d12141d650ab40b2d70fa7d7961d0f346c",
+              "size": 331515544
+            }
+          }
+        },
+        "0.7.19-2": {
+          "changelog": "Hermes Studio for fnOS — 稳定版 v0.7.19-2\n\n**打包追踪的上游版本**（由 auto-update.yml 自动对齐）：hermes-web-ui `0.7.19` ｜ hermes-agent `v2026.9.11`\n\n## 本次更新（v0.7.19-2）\n- 跟随官方 GitHub Release 预构建产物（EKKOLearnAI/hermes-studio）自动对齐 hermes-web-ui 版本，比 npm 发布更及时。\n- 内置 Hermes Agent 离线源码包（按 NousResearch/hermes-agent 最新 release 标签钉版本），安装时跳过 GitHub git clone，适合 NAS 弱网环境。\n- Agent browser tools + TUI 依赖预装进 FPK，首启跳过后台 npm install，启动更快。\n- bundled node 运行时不入库，CI 用 Node v24 编译含原生 node-pty，安装走离线复制，避免 fnOS 缺 gcc 导致安装卡死。\n- 安装前自动环境检查：Node.js、8648 端口占用、清理残留进程 / IPC socket / PID 文件、修复数据目录属主。\n\n> ⚠️ 若从旧版本升级仍异常，建议先 pkill -9 -f hermes 并卸载旧版后再重装。\n\n## 安装说明\n1. 飞牛应用中心 -> 手动安装 -> 选择本 fpk。\n2. 安装后首次启动会自动在后台安装 Hermes Agent（约 1-3 分钟），请稍候。\n3. 默认监听 8648 端口，点击应用图标在浏览器打开。\n\n固定版本请从本 Release 附件下载 fnos-hermes-studio_v0.7.19-2.fpk；\n最新滚动版见 Release latest。",
+          "updated_at": "2026-09-11T19:49:13Z",
+          "packages": {
+            "all": {
+              "download_url": "https://github.com/veenyi/Fnos-Hermes-Studio/releases/download/v0.7.19-2/fnos-hermes-studio_v0.7.19-2.fpk",
+              "sha256": "3deab3fc18c5df88570567657de4c725d42fec8f68875d80dea0e3050b380f90",
+              "size": 331111791
+            }
+          }
+        }
+      }
+    }
+  }
+}
