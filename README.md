@@ -37,7 +37,7 @@ veenyi 的每个 Release 只发布**一个** FPK，文件名不带架构后缀�
 veenyi/Fnos-Hermes-Studio 配置了 `auto-update.yml`，**每天自动发版**。由于 FnDepot 客户端
 在 `sha256` 存在时会**强制校验**，手动维护的索引必然在数天内失效。
 
-本仓库的 `fnpack.json` 由 `gen_fnpack.py` 生成，并通过 GitHub Actions 每 4 小时同步一次：
+本仓库的 `fnpack.json` 由 `gen_fnpack.py` 生成，并通过 GitHub Actions 每 20 分钟同步一次：
 
 ```bash
 python3 gen_fnpack.py --verify        # 生成 + 联网校验
@@ -50,9 +50,43 @@ python3 gen_fnpack.py --verify --deep # 额外实际下载核对 sha256（较慢
 - **跳过没有 sha256 digest 的 Release** —— 填入错误的哈希比不填更危险
 - 校验分类白名单、架构键白名单、版本号可比较性、`size` 为整数等规范要求
 - 若 `source_info.name` / `author` 中出现 "FnDepot" 字样会**直接报错**（规范明令禁止，避免与官方混淆）
+- **同 tag 重传检测**：与已发布的 `fnpack.json` 比对，同一版本号下 `size` / `sha256` 变化会显式告警
 
 源作者用户名通过 `FNDEPOT_OWNER` 环境变量注入，CI 中由 `${{ github.repository_owner }}` 提供，
 本地可用 `--owner` 覆盖。
+
+## 「下载大小不完整」故障与对策
+
+真实遇到过一次的错误：
+
+```text
+[App] 下载安装包失败: Hermes Studio | 应用=hermes-studio | 原因=下载大小不完整: expected=343501170 actual=343503444
+```
+
+**成因**：veenyi 在**同一个 tag（`v0.7.25-1`）下重传了同名 FPK**。GitHub Release 的 tag 与版本号不变，
+但资产字节数从 `343501170` 变成 `343503444`，sha256 也随之改变。索引仍写着旧的 `size`，
+客户端下载完整后按旧 `size` 判定，直接拒绝安装。
+
+值得注意的是，重传也可能让**索引里的 size 偏大**——若索引先于 CDN 刷新就收录了 API 元数据，
+用户会看到 expected 大于 actual。因此两边都必须防。
+
+对策有三层：
+
+1. **静默期（`--settle`，默认 20 分钟）**：资产刚被替换的版本暂不收录，等 CDN 内容刷新完再入库。
+2. **Content-Length 对账**：写盘前用 HEAD 跟随 302 取 `Content-Length`，与 API 的 `size` 反复核对
+   （3 次重试、间隔 3 秒）；不一致则跳过该版本，**宁可少收录一个版本，也不让用户装不上**。
+3. **同步频率 20 分钟**：GitHub Actions 的 `cron: "13,33,53 * * * *"`，把重传窗口压到最小。
+
+```bash
+python3 gen_fnpack.py --settle 0   # 关闭静默期（仅本地排障用）
+```
+
+每次运行会打印跳过原因，例如：
+
+```text
+[!] 上游同 tag 重传 0.7.25-1：size 343501170 → 343503444，sha256 ce62015f7646… → 9f44e3a1ef13…
+[跳过] 0.7.26-1：资产 7 分钟前刚被替换，等待 20 分钟静默期
+```
 
 ## 目录结构
 
@@ -60,7 +94,7 @@ python3 gen_fnpack.py --verify --deep # 额外实际下载核对 sha256（较慢
 FnDepot/
 ├── fnpack.json                          # 应用源索引（自动生成，勿手工编辑）
 ├── gen_fnpack.py                        # 生成 + 校验脚本
-└── .github/workflows/sync-upstream.yml  # 每 4 小时同步上游发版
+└── .github/workflows/sync-upstream.yml  # 每 20 分钟同步上游发版
 ```
 
 ## 规范遵循说明
