@@ -7,10 +7,19 @@
 为什么必须自动生成：veenyi 有 auto-update.yml 每天发版，版本号 / size / sha256 每次都变。
 手写 fnpack.json 必然过期，客户端强制校验会因 sha256 不匹配而失败。
 
+更棘手的一点（真实故障）：veenyi 会在**同一个 tag 下重传同名 FPK**（打包重试 / 依赖重装），
+tag 与版本号不变，但资产字节数与 sha256 都变了。索引一旦没跟上，客户端就会出现
+「下载大小不完整: expected=… actual=…」——它按索引里的旧 size 判定，而实际下到的是新文件。
+因此本脚本除了生成索引，还做三件事：
+  1. 静默期（--settle）：资产刚被替换的 N 分钟内不收录，避免 CDN 内容与新 size 尚未对齐；
+  2. 尺寸对账：写盘前用 HEAD 的 Content-Length 与 API size 反复核对，不一致就跳过该版本；
+  3. 漂移告警：与已发布的 fnpack.json 比对，同 tag 的 size/sha256 变化会显式打印。
+
 用法:
     python3 gen_fnpack.py                 # 生成 fnpack.json 并校验
     python3 gen_fnpack.py --verify        # 额外联网校验（资源可达 + content-length == size）
     python3 gen_fnpack.py --deep          # 实际下载核对 sha256（很慢，约 330MB/版本）
+    python3 gen_fnpack.py --settle 0      # 关闭静默期（本地排障用）
 
 环境变量:
     FNDEPOT_OWNER   本源作者的 GitHub 用户名（写入 source_info.author / homepage）。
@@ -26,6 +35,8 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
+import time
 import urllib.request
 from datetime import datetime, timezone
 
@@ -45,6 +56,11 @@ CATEGORIES = ["AI赋能", "系统工具"]  # 固定分类，最多两个，第�
 # Linux x64 / Node24 ABI，打包脚本无 arm 逻辑，填 x86 可避免 arm 装完启动失败。
 PLATFORM = ["x86"]
 KEEP_VERSIONS = 10
+FETCH_EXTRA = 3        # 多抓几个，给下面「静默期/对账失败被跳过」留余量
+SETTLE_MINUTES = 0     # 资产刚被重传后的静默期；默认关闭（见 README：真正把关的是 Content-Length 对账，
+                       # 静默期只会推迟恢复，上游一天重传两三次时会白白错过最新版本）
+HEAD_RETRIES = 5       # Content-Length 与 API size 对账的重试次数
+HEAD_RETRY_SLEEP = 5
 
 DESC = (
     "Hermes Studio 是 Hermes Agent 的桌面 / Web 控制台与本地运行时，"
@@ -94,15 +110,22 @@ def http_json(url, timeout=30):
         return json.load(r)
 
 
+def parse_ts(s):
+    """解析 GitHub 的 ISO8601 时间戳；无法解析返回 None。"""
+    if not s:
+        return None
+    try:
+        return datetime.fromisoformat(str(s).replace("Z", "+00:00"))
+    except Exception:
+        return None
+
+
 def norm_version(tag, name):
     """
     veenyi 的 tag 形如 v0.7.25-1：主版本是 web-ui 版本，-1 是打包迭代号。
     FnDepot 客户端要求 SemVer 可比较，直接用 tag 去掉 v 前缀即可（0.7.25-1 是合法 SemVer 预发布号）。
     """
-    v = tag.lstrip("v")
-    if v != name.rsplit(".", 1)[0] and "-" in v:
-        pass
-    return v
+    return tag.lstrip("v")
 
 
 def fetch_releases(limit):
@@ -118,7 +141,6 @@ def fetch_releases(limit):
         if not re.fullmatch(r"[0-9a-f]{64}", digest):
             print(f"  ! 跳过 {rel['tag_name']}：GitHub 未提供 sha256 digest，无法保证校验安全", file=sys.stderr)
             continue
-        published = rel.get("published_at")
         out.append(
             {
                 "version": norm_version(rel["tag_name"], fpk["name"]),
@@ -126,7 +148,8 @@ def fetch_releases(limit):
                 "download_url": fpk["browser_download_url"],
                 "sha256": digest,
                 "size": fpk["size"],
-                "updated_at": published,
+                "updated_at": rel.get("published_at"),
+                "asset_updated_at": fpk.get("updated_at"),
                 "changelog": (rel.get("body") or "").strip() or f"见 {rel['html_url']}",
                 "html_url": rel["html_url"],
             }
@@ -134,6 +157,87 @@ def fetch_releases(limit):
         if len(out) >= limit:
             break
     return out
+
+
+def head_content_length(url, timeout=30):
+    """取下载 URL（跟随 302 到 release-assets CDN）的 Content-Length。"""
+    req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": "fndepot-gen"})
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        clen = resp.headers.get("Content-Length")
+        return int(clen) if clen and str(clen).isdigit() else None
+
+
+def load_published(path):
+    """读取仓库里已发布的 fnpack.json，用于同 tag 漂移比对。"""
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return None
+
+
+def report_drift(published, rels):
+    """同一个版本号下 size/sha256 变了 = 上游重传同名资产，必须显式告警。"""
+    known = {}
+    if published:
+        app = (published.get("apps") or {}).get(APP_NAME) or {}
+        for ver, r in (app.get("releases") or {}).items():
+            p = (r.get("packages") or {}).get("all") or {}
+            if p.get("sha256"):
+                known[ver] = (p.get("size"), p["sha256"])
+    for r in rels:
+        prev = known.get(r["version"])
+        if not prev:
+            continue
+        old_size, old_sha = prev
+        if old_sha != r["sha256"] or old_size != r["size"]:
+            print(f"  [!] 上游同 tag 重传 {r['version']}：size {old_size} → {r['size']}，"
+                  f"sha256 {str(old_sha)[:12]}… → {r['sha256'][:12]}…")
+
+
+def stabilize(rels, settle_minutes=SETTLE_MINUTES, now=None, only_versions=None):
+    """
+    剔除「暂时不该收录」的版本，返回 (可发布列表, 跳过原因列表)。
+
+    跳过两种情况：
+      a) 资产在静默期内刚被替换 —— 此刻收录可能与 CDN 实际内容错位；
+      b) HEAD 的 Content-Length 与 API size 对不上 —— 说明上传仍在进行或 CDN 未刷新，
+         收录必然让客户端报「下载大小不完整」。
+
+    only_versions：只对这些版本做 HEAD 对账（高频轮询时用于省请求，其余版本直接信任 API）。
+    """
+    now = now or datetime.now(timezone.utc)
+    check = None if only_versions is None else set(only_versions)
+    keep, skipped = [], []
+    for r in rels:
+        if check is not None and r["version"] not in check:
+            keep.append(r)
+            continue
+        upd = parse_ts(r.get("asset_updated_at"))
+        if settle_minutes > 0 and upd is not None:
+            age = (now - upd).total_seconds() / 60.0
+            if age < settle_minutes:
+                skipped.append(f"{r['version']}：资产 {age:.0f} 分钟前刚被替换，等待 {settle_minutes} 分钟静默期")
+                continue
+        clen, ok = None, False
+        for attempt in range(HEAD_RETRIES):
+            try:
+                clen = head_content_length(r["download_url"])
+            except Exception as e:
+                clen = None
+                if attempt == HEAD_RETRIES - 1:
+                    skipped.append(f"{r['version']}：HEAD 取不到 Content-Length（{e}）")
+                    break
+            if clen is not None and clen == r["size"]:
+                ok = True
+                break
+            if attempt < HEAD_RETRIES - 1:
+                time.sleep(HEAD_RETRY_SLEEP)
+        if ok:
+            keep.append(r)
+        elif clen is not None:
+            skipped.append(f"{r['version']}：Content-Length({clen}) 与 API size({r['size']}) 不一致，疑似重传中")
+    return keep, skipped
 
 
 def build(rels, owner):
@@ -290,13 +394,16 @@ def verify_online(doc, deep=False):
         except Exception as e:
             problems.append(f"{ver}: FPK 不可达 {e}")
         if deep:
+            # 边下边算，不把 330MB 读进内存；落盘到 TMPDIR，避免写 /tmp 撑爆内存盘
             h = hashlib.sha256()
-            tmp = "/tmp/.fndepot-verify.fpk"
+            tmp = os.path.join(tempfile.gettempdir(), ".fndepot-verify.fpk")
             try:
-                with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": "fndepot-gen"}), timeout=600) as resp, open(tmp, "wb") as f:
+                with urllib.request.urlopen(
+                    urllib.request.Request(url, headers={"User-Agent": "fndepot-gen"}), timeout=600
+                ) as resp, open(tmp, "wb") as f:
                     for chunk in iter(lambda: resp.read(1 << 20), b""):
+                        h.update(chunk)
                         f.write(chunk)
-                h.update(open(tmp, "rb").read())
                 got = h.hexdigest()
                 print(f"  [{'OK' if got == p['sha256'] else '!!'}] {ver}: sha256 实测={got[:16]}…")
                 if got != p["sha256"]:
@@ -313,6 +420,8 @@ def main():
     ap.add_argument("--out", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "fnpack.json"))
     ap.add_argument("--verify", action="store_true", help="生成后联网校验资源可达性与 size")
     ap.add_argument("--deep", action="store_true", help="实际下载核对 sha256（很慢）")
+    ap.add_argument("--settle", type=int, default=SETTLE_MINUTES,
+                    help=f"资产重传后的静默期分钟数，0 关闭（默认 {SETTLE_MINUTES}）")
     ap.add_argument("--owner", default=None, help="本源作者 GitHub 用户名（默认自动推断）")
     args = ap.parse_args()
 
@@ -324,12 +433,25 @@ def main():
 
     print(f"源作者：{owner}")
     print(f"拉取 {REPO} 最近 releases …")
-    rels = fetch_releases(args.limit)
+    rels = fetch_releases(args.limit + FETCH_EXTRA)
     if not rels:
         print("错误：没有可用 release（缺少 .fpk 资产或 sha256）", file=sys.stderr)
         return 1
-    doc = build(rels, owner)
-    print(f"生成 {len(rels)} 个版本，最新 {rels[0]['version']}")
+
+    print("漂移检查（与已发布索引比对）：")
+    report_drift(load_published(args.out), rels)
+
+    print(f"稳定性检查（静默期 {args.settle} 分钟 + Content-Length 对账）：")
+    stable, skipped = stabilize(rels, settle_minutes=args.settle)
+    for s in skipped:
+        print(f"  [跳过] {s}")
+    if not stable:
+        print("错误：所有版本都未通过稳定性检查，保留原 fnpack.json 不动。", file=sys.stderr)
+        return 1
+    stable = stable[:args.limit]
+
+    doc = build(stable, owner)
+    print(f"收录 {len(stable)} 个版本，最新 {stable[0]['version']}")
 
     errs, warns = validate(doc)
     for w in warns:

@@ -88,6 +88,47 @@ python3 gen_fnpack.py --settle 0   # 关闭静默期（仅本地排障用）
 [跳过] 0.7.26-1：资产 7 分钟前刚被替换，等待 20 分钟静默期
 ```
 
+## 定时任务不触发？（踩过的坑）
+
+上线当天遇到的现象：**`sync-upstream.yml` 一次定时运行都没有**，但手动 `workflow_dispatch` 跑得好好的。
+
+排查结论：**`schedule` 从未被 GitHub 注册过**。判据不是 API 里的 `state` —— 它一直是 `active`，
+而 `active` 只表示"没有被手动停用"，**不代表定时已生效**。真正的判据是：
+
+```text
+GET /repos/{owner}/{repo}/actions/runs?event=schedule   →  total_count = 0
+```
+
+当时的实测证据链：
+
+| 检查项 | 结果 |
+|---|---|
+| 文件位置 `.github/workflows/sync-upstream.yml` | ✅ 正确 |
+| 默认分支 `main` | ✅ 正确 |
+| 文件字节（无 BOM / 无 CRLF / 无控制字符） | ✅ 干净 |
+| 本地与远端 md5 | ✅ 完全一致 |
+| 工作流 `state` | `active` |
+| Actions 平台状态 | All Systems Operational |
+| `event=schedule` 运行数 | ❌ **0**（16 个档位全数错过） |
+
+**处置办法**（GitHub 文档：*改动 cron 表达式的那次提交会（重新）激活定时工作流*）：
+
+1. 在网页上编辑 `.github/workflows/sync-upstream.yml`，**改一下 cron 的分钟数**（换个值即可）并提交；
+2. 或到 Actions → 该工作流 → ⋯ → **Disable workflow**，再 **Enable workflow**；
+3. 之后确认下一个档位真的触发了。
+
+**自查脚本**（同时检查"定时是否注册"和"索引是否过期"）：
+
+```bash
+python3 verify_schedule.py
+```
+
+另外要知道 GitHub 定时的两个固有局限，别指望它像 cron 那样准：
+
+- **尽力而为**：负载高时排队、延迟甚至丢弃，整点前后尤其明显（所以示例避开整点）；
+- **公库 60 天无活动会被自动停用**：源仓库只有工作流自己在提交，若上游长期不发版，
+  定时可能被 GitHub 停掉，需要重新激活。
+
 ## 目录结构
 
 ```text

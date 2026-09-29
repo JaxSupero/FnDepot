@@ -11,6 +11,10 @@ fnpack-editor/
 *.local.json
 .env
 
+# GitHub PAT（NAS 侧兜底同步用，绝不入库）
+.gh_token
+.fnpack.nas.json
+
 # Python
 __pycache__/
 *.py[cod]
