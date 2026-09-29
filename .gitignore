@@ -1,0 +1,24 @@
+# 本仓库只托管 fnpack.json 索引，不托管任何 FPK / 二进制资源。
+# 如果日后有人把安装包放进仓库，不要提交（体积 300MB+）。
+
+*.fpk
+*.tar
+*.tar.gz
+*.tgz
+
+# fndepot-editor 等工具的本地缓存
+fnpack-editor/
+*.local.json
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
