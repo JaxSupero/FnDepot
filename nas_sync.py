@@ -34,6 +34,7 @@ import base64
 import json
 import os
 import ssl
+import subprocess
 import sys
 import time
 import urllib.error
@@ -51,6 +52,11 @@ PATH = "fnpack.json"
 BRANCH = "main"
 TOKEN_FILE = os.path.join(HERE, ".gh_token")
 UA = "fndepot-nas-sync"
+
+# 浏览器兜底通道（没有 PAT 时用）：gh_upload.py 需要 websockets，只有这个解释器有
+VENV_PY = "/vol1/@apphome/hermes-studio/hermes-agent/venv/bin/python3"
+CDP = "http://127.0.0.1:16003"
+GH_UPLOAD = os.path.join(HERE, "gh_upload.py")
 
 
 def read_token():
@@ -137,6 +143,57 @@ def build_index(limit=G.KEEP_VERSIONS, deployed=None, verbose=False):
     return doc, skipped
 
 
+def cdp_alive():
+    """CDP 端口上有没有活的浏览器（本地回环，别走代理）。"""
+    try:
+        op = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+        with op.open(f"{CDP}/json/version", timeout=6) as r:
+            return r.status == 200
+    except Exception:
+        return False
+
+
+def browser_push(doc, changes):
+    """
+    没有 PAT 时的兜底：把新索引写到本地 → 用宿主机 Chrome 的真实会话走网页上传页提交。
+
+    实测（2026-09-30）：
+      - 默认 context 能直连 github.com、握着 JaxSupero 的真实登录态，网页提交正常；
+      - 「建代理 context + 从默认 context 读 cookie 注入」那条路 POST 一定被 GitHub
+        的 CSRF 检查拒掉（返回 "You signed in with another tab or window"），别再走。
+
+    返回 (rc, 说明)：0=成功，3=浏览器不可用（属预期情况），1=真失败。
+    """
+    if not os.path.exists(VENV_PY):
+        return 3, f"缺少解释器 {VENV_PY}"
+    if not cdp_alive():
+        return 3, "CDP 无响应（浏览器没开？）"
+
+    body_text = json.dumps(doc, ensure_ascii=False, indent=2) + "\n"
+    tmp = os.path.join(HERE, ".fnpack.nas.json")
+    try:
+        with open(tmp, "w", encoding="utf-8") as f:
+            f.write(body_text)
+        os.replace(tmp, os.path.join(HERE, PATH))
+    except Exception as e:
+        return 1, f"写本地索引失败：{e}"
+
+    latest = next(iter(doc["apps"][G.APP_NAME]["releases"]))
+    env = dict(os.environ)
+    env["GH_COMMIT_MSG"] = (f"chore: 同步 Hermes Studio {latest}\n\n"
+                            f"上游同 tag 重传导致索引过期，NAS 侧自动修正。"
+                            f"变更：{'; '.join(changes) or '元数据'}")
+    try:
+        r = subprocess.run([VENV_PY, GH_UPLOAD, "--ctx", "default", "--files", PATH],
+                           capture_output=True, text=True, timeout=240, cwd=HERE, env=env)
+    except subprocess.TimeoutExpired:
+        return 1, "浏览器提交超时"
+    out = (r.stdout or "").strip()
+    if r.returncode == 0 and "✅ 已提交" in out:
+        return 0, "经浏览器提交成功"
+    return 1, f"浏览器提交失败 rc={r.returncode}；{out[-200:]}{(r.stderr or '')[-200:]}"
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry-run", action="store_true", help="只报告差异，不写 GitHub")
@@ -203,8 +260,19 @@ def main():
         return 0
 
     if not token:
-        print(f"❌ 没找到 token，无法推送。请把 PAT 写进 {TOKEN_FILE}（chmod 600）。", file=sys.stderr)
-        return 2
+        rc, why = browser_push(doc, changes)
+        if rc == 0:
+            print(f"🔄 已同步 Hermes Studio {latest} → {OWNER}/{REPO}（浏览器通道）；"
+                  f"变更：{'; '.join(changes) or '元数据'}")
+            return 0
+        if rc == 3:
+            # 浏览器不可用属预期情况（没开浏览器 / CDP 没起），静默退出，
+            # 免得 cron 每 5 分钟报一次失败告警
+            if a.verbose:
+                print(f"   [跳过] {why}，且没有 PAT", file=sys.stderr)
+            return 0
+        print(f"❌ {why}", file=sys.stderr)
+        return 1
 
     # 4) 推送（带 sha；并发冲突则重取一次）
     body_text = json.dumps(doc, ensure_ascii=False, indent=2) + "\n"

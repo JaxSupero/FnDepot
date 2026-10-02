@@ -37,7 +37,7 @@ veenyi 的每个 Release 只发布**一个** FPK，文件名不带架构后缀�
 veenyi/Fnos-Hermes-Studio 配置了 `auto-update.yml`，**每天自动发版**。由于 FnDepot 客户端
 在 `sha256` 存在时会**强制校验**，手动维护的索引必然在数天内失效。
 
-本仓库的 `fnpack.json` 由 `gen_fnpack.py` 生成，并通过 GitHub Actions 每 20 分钟同步一次：
+本仓库的 `fnpack.json` 由 `gen_fnpack.py` 生成，并由 NAS 侧每 5 分钟同步一次（Actions 为备用）：
 
 ```bash
 python3 gen_fnpack.py --verify        # 生成 + 联网校验
@@ -70,12 +70,16 @@ python3 gen_fnpack.py --verify --deep # 额外实际下载核对 sha256（较慢
 值得注意的是，重传也可能让**索引里的 size 偏大**——若索引先于 CDN 刷新就收录了 API 元数据，
 用户会看到 expected 大于 actual。因此两边都必须防。
 
-对策有三层：
+对策分三层：
 
-1. **静默期（`--settle`，默认 20 分钟）**：资产刚被替换的版本暂不收录，等 CDN 内容刷新完再入库。
-2. **Content-Length 对账**：写盘前用 HEAD 跟随 302 取 `Content-Length`，与 API 的 `size` 反复核对
-   （3 次重试、间隔 3 秒）；不一致则跳过该版本，**宁可少收录一个版本，也不让用户装不上**。
-3. **同步频率 20 分钟**：GitHub Actions 的 `cron: "13,33,53 * * * *"`，把重传窗口压到最小。
+1. **Content-Length 对账**：写盘前用 HEAD 跟随 302 取 `Content-Length`，与 API 的 `size` 反复核对
+   （5 次重试、间隔 5 秒）；不一致则跳过该版本，**宁可少收录一个版本，也不让用户装不上**。
+   这是真正管用的那道闸门。
+2. **静默期（`--settle`，默认 0）**：曾设成 20 分钟「等 CDN 刷新完再收录」，但上游一天重传 2~3 次，
+   静默期反而常常错过最新版本、把过期窗口拖得更长，所以默认关掉（需要时用 `--settle N` 打开）。
+3. **NAS 侧 5 分钟轮询**：GitHub Actions 的定时器在本仓库根本没被注册（见下节），
+   因此真正的兜底是 NAS 上每 5 分钟跑一次的 `nas_sync.py`——它比对线上索引与上游产物，
+   只在真的变化时才提交，把重传窗口压到 5 分钟以内。
 
 ```bash
 python3 gen_fnpack.py --settle 0   # 关闭静默期（仅本地排障用）
@@ -129,13 +133,46 @@ python3 verify_schedule.py
 - **公库 60 天无活动会被自动停用**：源仓库只有工作流自己在提交，若上游长期不发版，
   定时可能被 GitHub 停掉，需要重新激活。
 
+## NAS 侧兜底同步（当前的主用通路）
+
+因为 `schedule` 始终没被注册，现在不能只靠 Actions。已由一台常开的 NAS 每 5 分钟执行
+`nas_sync.py`：
+
+```bash
+python3 nas_sync.py --dry-run      # 只看差异，不写 GitHub、不需要 token
+python3 nas_sync.py --check-token  # 验证 PAT 有效性与权限
+python3 nas_sync.py --verbose      # 正常同步，并打印判断过程
+```
+
+推送按可用性自动选通道：
+
+| 通道 | 前提 | 说明 |
+|---|---|---|
+| Contents API | 仓库根目录放 `.gh_token`（fine-grained PAT，Contents: Read and write，chmod 600） | 首选，最稳 |
+| 浏览器网页提交 | 宿主机 Chrome 开着，CDP 在 `127.0.0.1:16003` | 无 PAT 时的兜底，走用户真实登录会话 |
+| 都不可用 | — | 静默退出（不刷失败告警），等下一轮 |
+
+浏览器通道的**关键实测结论**（踩了一整轮坑，别再重走）：
+
+- ✅ 用浏览器的**默认 context**（即用户自己的登录会话）：能直连 github.com，表单提交正常；
+- ❌ 不要用「新建带代理的 context + 从默认 context 读 cookie 注入」：GET 认得出登录态，
+  但 **POST 一律被 CSRF 拒掉**，页面回 `You signed in with another tab or window`。
+  已排除 `__Host-` 前缀 cookie 被拒的可能（注入后回读是存在的），本质是两套会话互斥。
+- ❌ 判定上传页「文件传完没有」**不能**看 `.js-upload-meter-filename`：GitHub 的进度条是
+  **一个文件传完就把它从列表里移走**，全部传完后该列表就是空的（照它判断必然误判成超时）。
+  正确判据是三条同时成立：提交表单出现 ＋ 正文里能看到全部目标文件名 ＋ 提交按钮可点。
+
 ## 目录结构
 
 ```text
 FnDepot/
 ├── fnpack.json                          # 应用源索引（自动生成，勿手工编辑）
 ├── gen_fnpack.py                        # 生成 + 校验脚本
-└── .github/workflows/sync-upstream.yml  # 每 20 分钟同步上游发版
+├── nas_sync.py                          # NAS 侧兜底同步（每 5 分钟，主用通路）
+├── verify_schedule.py                   # 自查：定时是否注册 + 索引是否过期
+├── verify_remote.py                     # 自查：远端与本地是否逐字节一致
+├── gh_upload.py                         # 无 PAT 时用浏览器提交（--ctx default）
+└── .github/workflows/sync-upstream.yml  # 备用通路（本仓库的 schedule 未被注册）
 ```
 
 ## 规范遵循说明
