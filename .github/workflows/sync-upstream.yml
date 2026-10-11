@@ -1,5 +1,7 @@
 name: sync-upstream
 
+# 本源现收录多个应用（清单见 gen_fnpack.py 的 APP_SPECS）。
+#
 # veenyi/Fnos-Hermes-Studio 每天自动发版，而且会在**同一 tag 下重传同名 FPK**
 # （实测：v0.7.25-1 资产从 343501170 变为 343503444 字节、sha256 同步变化）。
 # 索引没跟上时，FnDepot 客户端按旧 size 判定，会报
@@ -15,7 +17,7 @@ name: sync-upstream
 #   自查：python3 verify_schedule.py
 on:
   schedule:
-    - cron: "5,25,45 * * * *"
+    - cron: "7,27,47 * * * *"
   workflow_dispatch:
     inputs:
       deep:
@@ -35,9 +37,10 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # v5 / v6 起原生跑在 Node 24 上，可消除 "Node.js 20 is deprecated" 的 annotation
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
@@ -61,8 +64,8 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add fnpack.json
-          LATEST=$(python3 -c "import json;d=json.load(open('fnpack.json'));print(sorted(d['apps']['hermes-studio']['releases'])[-1])")
-          git commit -m "chore: 同步 Hermes Studio $LATEST"
+          LATEST=$(python3 -c 'import json;d=json.load(open("fnpack.json"));print("、".join(n+" "+sorted(a["releases"])[-1] for n,a in d["apps"].items()))')
+          git commit -m "chore: 同步 $LATEST"
           git push
 
       - name: 源文件合规硬校验
@@ -83,9 +86,11 @@ jobs:
           CATS = {"影音娱乐","系统工具","编程开发","AI赋能","生活服务",
                   "智能智控","教育学习","游戏地带","硬件驱动"}
           ARCH = {"all","x86","arm"}
+          # 与 gen_fnpack.APP_SPECS 的 app_name 保持一致；新增应用要同时改这里
+          KNOWN = {"hermes-studio", "douyin_sparkflow"}
           for name, app in d["apps"].items():
-              if name != "hermes-studio":
-                  errs.append(f"appname {name} 与 FPK manifest 不符")
+              if name not in KNOWN:
+                  errs.append(f"appname {name} 不在已收录清单 {sorted(KNOWN)} 中")
               for k in ("display_name","desc","platform","categories","icon_url",
                         "run_as","install_type","is_docker","releases"):
                   if k not in app:
@@ -108,6 +113,7 @@ jobs:
           if errs:
               print("\n".join("FAIL: " + e for e in errs), file=sys.stderr)
               sys.exit(1)
-          n = len(d["apps"]["hermes-studio"]["releases"])
-          print(f"合规校验通过：{n} 个版本")
+          total = sum(len(a["releases"]) for a in d["apps"].values())
+          detail = "，".join(f"{k} {len(v['releases'])} 个版本" for k, v in d["apps"].items())
+          print(f"合规校验通过：{total} 个版本（{detail}）")
           PY
