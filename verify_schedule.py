@@ -21,12 +21,17 @@
 
 import argparse
 import json
+import os
+import sys
 import urllib.request
 from datetime import datetime, timezone
 
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import gen_fnpack as G  # noqa: E402  多应用清单的唯一来源
+
 API = "https://api.github.com"
 HDR = {"User-Agent": "fndepot-verify", "Accept": "application/vnd.github+json"}
-UPSTREAM = "veenyi/Fnos-Hermes-Studio"
 
 
 def get_json(url, raw=False):
@@ -73,27 +78,34 @@ def main():
     print("2) 线上索引是否过期")
     live = json.loads(get_json(
         f"https://raw.githubusercontent.com/{owner}/{repo}/main/fnpack.json", raw=True))
-    app = live["apps"]["hermes-studio"]
-    up = get_json(f"{API}/repos/{UPSTREAM}/releases?per_page=15")
-    real = {}
-    for rel in up:
-        fpk = next((x for x in rel.get("assets", []) if x["name"].endswith(".fpk")), None)
-        if fpk:
-            real[rel["tag_name"].lstrip("v")] = (fpk["size"], fpk.get("digest", "").replace("sha256:", ""))
     stale = []
-    for ver, r in app["releases"].items():
-        p = r["packages"]["all"]
-        cur = real.get(ver)
-        if not cur:
-            print(f"   [--] {ver}: 上游已无此 Release（索引保留，无碍）")
+    for name, app in live["apps"].items():
+        spec = G.app_spec(name)
+        if not spec:
+            print(f"   [--] {name}: 不在本地 APP_SPECS 中，跳过对账")
             continue
-        size_ok = cur[0] == p["size"]
-        sha_ok = (not cur[1]) or cur[1] == p["sha256"]
-        flag = "OK" if (size_ok and sha_ok) else "!!"
-        print(f"   [{flag}] {ver}: 索引 size={p['size']} 实际={cur[0]}"
-              f"{'' if size_ok else '  ← 不一致，客户端会报下载大小不完整'}")
-        if not (size_ok and sha_ok):
-            stale.append(ver)
+        arch = spec["arch_key"]
+        print(f"   —— {name}（{spec['repo']}）——")
+        up = get_json(f"{API}/repos/{spec['repo']}/releases?per_page=15")
+        real = {}
+        for rel in up:
+            fpk = next((x for x in rel.get("assets", []) if x["name"].endswith(".fpk")), None)
+            if fpk:
+                real[rel["tag_name"].lstrip("v")] = (
+                    fpk["size"], fpk.get("digest", "").replace("sha256:", ""))
+        for ver, r in app["releases"].items():
+            p = r["packages"][arch]
+            cur = real.get(ver)
+            if not cur:
+                print(f"   [--] {ver}: 上游已无此 Release（索引保留，无碍）")
+                continue
+            size_ok = cur[0] == p["size"]
+            sha_ok = (not cur[1]) or cur[1] == p["sha256"]
+            flag = "OK" if (size_ok and sha_ok) else "!!"
+            print(f"   [{flag}] {ver}: 索引 size={p['size']} 实际={cur[0]}"
+                  f"{'' if size_ok else '  ← 不一致，客户端会报下载大小不完整'}")
+            if not (size_ok and sha_ok):
+                stale.append(f"{name}.{ver}")
     if stale:
         print(f"   ❌ 过期版本: {', '.join(stale)} —— 重新生成 fnpack.json 并提交")
         bad.append("索引过期")

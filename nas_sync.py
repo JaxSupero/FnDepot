@@ -99,8 +99,8 @@ def api(method, path, token=None, body=None, timeout=40):
 def strip_volatile(doc):
     """比对时忽略 details_updated_at —— 它每次生成都会变，否则会天天推空提交。"""
     d = json.loads(json.dumps(doc))
-    app = (d.get("apps") or {}).get(G.APP_NAME) or {}
-    app.pop("details_updated_at", None)
+    for app in (d.get("apps") or {}).values():
+        app.pop("details_updated_at", None)
     return d
 
 
@@ -109,38 +109,75 @@ def err_msg(d):
     return d.get("message") if isinstance(d, dict) else str(d)[:200]
 
 
-def build_index(limit=G.KEEP_VERSIONS, deployed=None, verbose=False):
-    """抓上游 + 稳定性对账 + 生成索引。返回 (doc, skipped 列表)。"""
-    rels = G.fetch_releases(limit + G.FETCH_EXTRA)
-    if not rels:
-        raise RuntimeError("上游没有可用 release（缺 .fpk 或 sha256）")
+def build_index(deployed=None, verbose=False):
+    """
+    抓上游 + 稳定性对账 + 生成索引，覆盖 G.APP_SPECS 里的**每个**应用。
 
-    # 只对「新增或 size/sha 变化的版本」做 HEAD 对账，省请求
-    check = {rels[0]["version"]}
-    if deployed:
-        dr = ((deployed.get("apps") or {}).get(G.APP_NAME) or {}).get("releases") or {}
-        for r in rels:
-            p = dr.get(r["version"], {}).get("packages", {}).get("all", {})
-            if p.get("size") != r["size"] or p.get("sha256") != r["sha256"]:
-                check.add(r["version"])
+    新增应用只需在 gen_fnpack.APP_SPECS 里加一项，这里无需改动。
+    """
+    entries, skipped_all = [], []
+    for spec in G.APP_SPECS:
+        name = spec["app_name"]
+        rels = G.fetch_releases(spec, spec["keep_versions"] + G.FETCH_EXTRA)
+        if not rels:
+            raise RuntimeError(f"{name}: 上游没有可用 release（缺 .fpk 或 sha256）")
 
-    stable, skipped = G.stabilize(rels, settle_minutes=G.SETTLE_MINUTES, only_versions=check)
-    if verbose:
-        for s in skipped:
-            print(f"   [跳过] {s}")
-    if not stable:
-        raise RuntimeError("所有版本都未通过对账，保留线上索引不动")
-    stable = stable[:limit]
-    if len(stable) < len(rels) and verbose:
-        print(f"   [提示] 上游有 {len(rels)} 个版本，本次收录 {len(stable)} 个")
-    doc = G.build(stable, OWNER)
+        # 只对「新增或 size/sha 变化的版本」做 HEAD 对账，省请求
+        check = {rels[0]["version"]}
+        if deployed:
+            dr = ((deployed.get("apps") or {}).get(name) or {}).get("releases") or {}
+            for r in rels:
+                p = (dr.get(r["version"]) or {}).get("packages", {}).get(spec["arch_key"], {})
+                if p.get("size") != r["size"] or p.get("sha256") != r["sha256"]:
+                    check.add(r["version"])
+
+        stable, skipped = G.stabilize(rels, settle_minutes=G.SETTLE_MINUTES, only_versions=check)
+        if verbose:
+            for s in skipped:
+                print(f"   [跳过] {name}: {s}")
+        if not stable:
+            raise RuntimeError(f"{name}: 所有版本都未通过对账，保留线上索引不动")
+        stable = stable[:spec["keep_versions"]]
+        if len(stable) < len(rels) and verbose:
+            print(f"   [提示] {name} 上游有 {len(rels)} 个版本，本次收录 {len(stable)} 个")
+        entries.append((spec, stable))
+        skipped_all.extend(f"{name}: {s}" for s in skipped)
+
+    doc = G.build(entries, OWNER)
     errs, warns = G.validate(doc)
     for w in warns:
         if verbose:
             print(f"   [warn] {w}")
     if errs:
         raise RuntimeError("规范校验失败：" + "；".join(errs))
-    return doc, skipped
+    return doc, skipped_all
+
+
+def summarize(doc):
+    """一行摘要：每个应用的最新收录版本。"""
+    return "、".join(f"{name} {next(iter(app['releases']))}"
+                     for name, app in doc["apps"].items())
+
+
+def diff_releases(deployed, doc):
+    """逐应用比对索引，返回人类可读的变更列表。"""
+    changes = []
+    for name, app in doc["apps"].items():
+        spec = G.app_spec(name)
+        arch = spec["arch_key"] if spec else "all"
+        nr = app["releases"]
+        dr = ((deployed.get("apps") or {}).get(name) or {}).get("releases") or {}
+        for v, r in nr.items():
+            p = r["packages"][arch]
+            op = (dr.get(v) or {}).get("packages", {}).get(arch)
+            if op is None:
+                changes.append(f"{name} 新增 {v}")
+            elif op.get("size") != p["size"] or op.get("sha256") != p["sha256"]:
+                changes.append(f"{name} {v} size {op.get('size')}→{p['size']}")
+        for v in dr:
+            if v not in nr:
+                changes.append(f"{name} 移除 {v}")
+    return changes
 
 
 def cdp_alive():
@@ -178,9 +215,9 @@ def browser_push(doc, changes):
     except Exception as e:
         return 1, f"写本地索引失败：{e}"
 
-    latest = next(iter(doc["apps"][G.APP_NAME]["releases"]))
+    latest = summarize(doc)
     env = dict(os.environ)
-    env["GH_COMMIT_MSG"] = (f"chore: 同步 Hermes Studio {latest}\n\n"
+    env["GH_COMMIT_MSG"] = (f"chore: 同步 {latest}\n\n"
                             f"上游同 tag 重传导致索引过期，NAS 侧自动修正。"
                             f"变更：{'; '.join(changes) or '元数据'}")
     try:
@@ -238,20 +275,8 @@ def main():
             print("   [不变] 线上索引已是最新，无需提交")
         return 0
 
-    latest = next(iter(doc["apps"][G.APP_NAME]["releases"]))
-    dr = deployed["apps"][G.APP_NAME]["releases"]
-    nr = doc["apps"][G.APP_NAME]["releases"]
-    changes = []
-    for v, r in nr.items():
-        p = r["packages"]["all"]
-        op = (dr.get(v) or {}).get("packages", {}).get("all")
-        if op is None:
-            changes.append(f"新增 {v}")
-        elif op.get("size") != p["size"] or op.get("sha256") != p["sha256"]:
-            changes.append(f"{v} size {op.get('size')}→{p['size']}")
-    for v in dr:
-        if v not in nr:
-            changes.append(f"移除 {v}")
+    latest = summarize(doc)
+    changes = diff_releases(deployed, doc)
 
     if a.dry_run:
         print(f"[dry-run] 索引需要更新：{latest}；差异：{'; '.join(changes) or '仅元数据'}")
@@ -262,7 +287,7 @@ def main():
     if not token:
         rc, why = browser_push(doc, changes)
         if rc == 0:
-            print(f"🔄 已同步 Hermes Studio {latest} → {OWNER}/{REPO}（浏览器通道）；"
+            print(f"🔄 已同步 {latest} → {OWNER}/{REPO}（浏览器通道）；"
                   f"变更：{'; '.join(changes) or '元数据'}")
             return 0
         if rc == 3:
@@ -276,7 +301,7 @@ def main():
 
     # 4) 推送（带 sha；并发冲突则重取一次）
     body_text = json.dumps(doc, ensure_ascii=False, indent=2) + "\n"
-    msg = f"chore: 同步 Hermes Studio {latest}"
+    msg = f"chore: 同步 {latest}"
     for attempt in (1, 2):
         payload = {
             "message": msg,
@@ -295,7 +320,7 @@ def main():
                 os.replace(tmp, os.path.join(HERE, PATH))
             except Exception as e:
                 print(f"   （本地副本写入失败，不影响线上：{e}）")
-            print(f"🔄 已同步 Hermes Studio {latest} → {OWNER}/{REPO} commit={commit}；"
+            print(f"🔄 已同步 {latest} → {OWNER}/{REPO} commit={commit}；"
                   f"变更：{'; '.join(changes) or '元数据'}")
             return 0
         if st in (409, 422) and attempt == 1:

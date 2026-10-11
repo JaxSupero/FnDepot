@@ -1,7 +1,7 @@
-# FnDepot 应用源 · Hermes Studio
+# FnDepot 应用源 · Hermes Studio / 抖音 SparkFlow
 
 符合 [FnDepot 外部应用源 V2 规范](https://github.com/EWEDLCM/FnDepot/blob/main/README.md) 的第三方应用源，
-收录 **Hermes Studio** 在 fnOS（飞牛）上的原生 FPK 安装包。
+收录 **Hermes Studio** 与 **抖音 SparkFlow** 在 fnOS（飞牛）上的原生 FPK 安装包。
 
 ## 在客户端中添加本源
 
@@ -19,9 +19,20 @@ https://github.com/<你的用户名>/FnDepot
 | 应用 | appname | 架构 | 打包者 | 上游 |
 |---|---|---|---|---|
 | Hermes Studio | `hermes-studio` | x86 | [veenyi](https://github.com/veenyi/Fnos-Hermes-Studio) | [EKKOLearnAI/hermes-studio](https://github.com/EKKOLearnAI/hermes-studio) |
+| 抖音 SparkFlow | `douyin_sparkflow` | x86 | [JaxSupero](https://github.com/JaxSupero/douyin-sparkflow-fpk) | [halfwaystudent/douyin-sparkflow](https://github.com/halfwaystudent/douyin-sparkflow) |
 
-本仓库不托管任何 FPK 文件，只提供索引。安装包直接从 veenyi 的 GitHub Releases 下载，
-因此包体（约 330MB/版本）不会占本仓库空间。
+本仓库不托管任何 FPK 文件，只提供索引。安装包直接从各自的 GitHub Releases 下载，
+因此包体（Hermes Studio 约 330MB/版本、抖音 SparkFlow 约 711MB/版本）不会占本仓库空间。
+
+### 新增收录一个应用
+
+1. 在 `gen_fnpack.py` 的 `APP_SPECS` 里追加一项（appname 必须等于 FPK manifest 的 `appname`，
+   大小写敏感；`arch_key` 填 `all`/`x86`/`arm`）；
+2. 把新的 appname 加进 `.github/workflows/sync-upstream.yml` 合规校验里的 `KNOWN` 集合；
+3. 重新生成并提交索引：`python3 gen_fnpack.py --verify --owner <你的用户名>`。
+
+`gen_fnpack.py`、`nas_sync.py`、`verify_schedule.py` 与 Actions 合规校验都从 `APP_SPECS`
+读取清单，不需要逐个函数改。
 
 ### 关于架构
 
@@ -32,10 +43,14 @@ veenyi 的每个 Release 只发布**一个** FPK，文件名不带架构后缀�
 这与上游 manifest 里的 `platform = all` 存在**有意差异**，目的是避免 arm64 设备
 装得上却启动失败。若上游后续提供 arm 构建，将在此处补充对应的 `packages.arm`。
 
+抖音 SparkFlow 的 FPK 也只出 x86_64（manifest `platform = x86`，包内是 x86-64 ELF），
+因此其 `platform` 为 `["x86"]`、安装包放在 `packages.x86`。这与上游 manifest 一致，无有意偏离。
+
 ## fnpack.json 为什么是自动生成的
 
-veenyi/Fnos-Hermes-Studio 配置了 `auto-update.yml`，**每天自动发版**。由于 FnDepot 客户端
-在 `sha256` 存在时会**强制校验**，手动维护的索引必然在数天内失效。
+veenyi/Fnos-Hermes-Studio 配置了 `auto-update.yml`，**每天自动发版**；JaxSupero/douyin-sparkflow-fpk
+则在检测到上游新 commit 时自动递增版本并重新构建。由于 FnDepot 客户端在 `sha256` 存在时会**强制校验**，
+手动维护的索引必然在数天内失效。
 
 本仓库的 `fnpack.json` 由 `gen_fnpack.py` 生成，并由 NAS 侧每 5 分钟同步一次（Actions 为备用）：
 
@@ -46,7 +61,7 @@ python3 gen_fnpack.py --verify --deep # 额外实际下载核对 sha256（较慢
 
 脚本的行为要点：
 
-- 从 GitHub Releases API 抓取最近版本，保留最近 10 个
+- 逐个应用（`gen_fnpack.APP_SPECS`）从各自的 GitHub Releases API 抓取最近版本，各保留最近 10 个
 - **跳过没有 sha256 digest 的 Release** —— 填入错误的哈希比不填更危险
 - 校验分类白名单、架构键白名单、版本号可比较性、`size` 为整数等规范要求
 - 若 `source_info.name` / `author` 中出现 "FnDepot" 字样会**直接报错**（规范明令禁止，避免与官方混淆）
@@ -167,7 +182,7 @@ python3 nas_sync.py --verbose      # 正常同步，并打印判断过程
 ```text
 FnDepot/
 ├── fnpack.json                          # 应用源索引（自动生成，勿手工编辑）
-├── gen_fnpack.py                        # 生成 + 校验脚本
+├── gen_fnpack.py                        # 生成 + 校验脚本（APP_SPECS 是收录清单的唯一来源）
 ├── nas_sync.py                          # NAS 侧兜底同步（每 5 分钟，主用通路）
 ├── verify_schedule.py                   # 自查：定时是否注册 + 索引是否过期
 ├── verify_remote.py                     # 自查：远端与本地是否逐字节一致
@@ -178,7 +193,7 @@ FnDepot/
 ## 规范遵循说明
 
 - `schema_version` 为字符串 `"2"`
-- `apps` 的键 `hermes-studio` 与 FPK manifest 中的 `appname` 完全一致（区分大小写）
+- `apps` 的键（`hermes-studio`、`douyin_sparkflow`）与各自 FPK manifest 中的 `appname` 完全一致（区分大小写）
 - `categories` 取自九个固定分类，且不超过两个
 - 每个安装包均提供 `download_url`、`size`（字节整数）与 `sha256`
 - `source_info` 未使用 "FnDepot" 作为源名或作者名；`maintainer` 与 `distributor` 分别标注上游开发者与打包者
@@ -188,5 +203,7 @@ FnDepot/
 本源由用户自行添加，仅在用户本地客户端中生效。FnDepot 官方不审核、不担保外部源中
 应用代码、安装包的安全性或稳定性。
 
-Hermes Studio FPK 由第三方打包，以 `package` 身份（系统用户 `hermes-studio`）运行。
+Hermes Studio FPK 由第三方打包，以 `package` 身份（系统用户 `hermes-studio`）运行；
+抖音 SparkFlow FPK 同样由第三方打包，以 `package` 身份（系统用户 `douyin_sparkflow`）运行，
+其上游采用 PolyForm Noncommercial 1.0.0 许可（仅限非商业用途），与抖音官方无任何关联。
 安装前请自行评估，并仅从你信任的来源获取安装包。

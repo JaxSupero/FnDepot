@@ -44,17 +44,6 @@ REPO = "veenyi/Fnos-Hermes-Studio"
 UPSTREAM = "https://github.com/EKKOLearnAI/hermes-studio"
 FALLBACK_OWNER = "CHANGE_ME"
 
-# 相对 FPK manifest 实测值（veenyi 仓库根 manifest）
-APP_NAME = "hermes-studio"  # 必须等于 FPK manifest 的 appname，区分大小写
-RUN_AS = "package"  # config/privilege: defaults.run-as
-IS_DOCKER = False
-INSTALL_TYPE = ""  # 存储空间
-SERVICE_PORT = "8648"
-CATEGORIES = ["AI赋能", "系统工具"]  # 固定分类，最多两个，第一项为主分类
-
-# 有意偏离上游 manifest 的 platform：manifest 写 all，但原生 node-pty 绑定
-# Linux x64 / Node24 ABI，打包脚本无 arm 逻辑，填 x86 可避免 arm 装完启动失败。
-PLATFORM = ["x86"]
 KEEP_VERSIONS = 10
 FETCH_EXTRA = 3        # 多抓几个，给下面「静默期/对账失败被跳过」留余量
 SETTLE_MINUTES = 0     # 资产刚被重传后的静默期；默认关闭（见 README：真正把关的是 Content-Length 对账，
@@ -82,7 +71,76 @@ PREVIEW_URLS = [f"https://raw.githubusercontent.com/{REPO}/main/preview/preview.
 README_URL = f"https://raw.githubusercontent.com/{REPO}/main/README.md"
 BUG_REPORT_URL = f"https://github.com/{REPO}/issues"
 
-SOURCE_NAME_SUFFIX = "Hermes Studio 应用源"
+SOURCE_NAME_SUFFIX = "fnOS 应用源"
+
+
+# ---------------- 多应用源定义 ----------------
+# 每个应用一份 spec。新增应用只需在 APP_SPECS 里追加一项，
+# 生成 / 校验 / NAS 同步 / Actions 合规检查都会自动覆盖到它。
+APP_SPECS = [
+    {
+        "app_name": "hermes-studio",  # 必须等于 FPK manifest 的 appname，区分大小写
+        "repo": REPO,
+        "upstream": UPSTREAM,
+        # veenyi 只发布单一架构 FPK（无 _x86/_arm 后缀），用 all 作为通用回退包。
+        "arch_key": "all",
+        # 有意偏离上游 manifest 的 platform：manifest 写 all，但原生 node-pty 绑定
+        # Linux x64 / Node24 ABI，打包脚本无 arm 逻辑，填 x86 可避免 arm 装完启动失败。
+        "platform": ["x86"],
+        "display_name": "Hermes Studio",
+        "desc": DESC,
+        "categories": ["AI赋能", "系统工具"],  # 固定分类，最多两个，第一项为主分类
+        "icon_url": ICON_URL,
+        "preview_urls": PREVIEW_URLS,
+        "readme_url": README_URL,
+        "bug_report_url": BUG_REPORT_URL,
+        "maintainer": "EKKOLearnAI",
+        "maintainer_url": UPSTREAM,
+        "distributor": "veenyi",
+        "distributor_url": f"https://github.com/{REPO}",
+        "run_as": "package",  # config/privilege: defaults.run-as
+        "install_type": "",   # 存储空间
+        "is_docker": False,
+        "service_port": "8648",
+        "keep_versions": KEEP_VERSIONS,
+    },
+    {
+        "app_name": "douyin_sparkflow",
+        "repo": "JaxSupero/douyin-sparkflow-fpk",
+        "upstream": "https://github.com/halfwaystudent/douyin-sparkflow",
+        # 本 FPK 只出 x86_64（manifest platform=x86，包内是 x86-64 ELF），
+        # 因此架构键用 x86 而非 all，避免 arm64 设备被推荐安装。
+        "arch_key": "x86",
+        "platform": ["x86"],
+        "display_name": "抖音 SparkFlow",
+        "desc": """抖音多账号火花自动维护工具（非官方第三方项目）：自动维护好友火花标记，支持多账号管理、定时发送与 Web 控制台。<br/><br/><strong>核心能力：</strong><br/>• 扫码登录：内置 noVNC 登录桌面，在 Web 页面内直接扫码、处理验证码<br/>• 多账号管理：同时维护多个账号，独立配置好友与发送策略<br/>• 定时调度：可配置发送窗口（如 10:00-18:00/20m），自动补偿漏发<br/>• 消息模板：一言、节日祝福、自定义文本随机化发送<br/>• 可视化面板：进度环、发送明细、日志查看与失败重试<br/><br/><strong>部署说明：</strong><br/>本包为飞牛 fnOS 原生部署（非 Docker）：依赖应用中心的 Python 3.12 与 Node.js v24 运行时；Python 依赖、Playwright Chromium 与 noVNC 登录环境已预置在包内，安装后无需联网拉取依赖、无需构建镜像。数据（账号、登录态、浏览器配置、日志）保存在应用数据目录，卸载或升级默认保留。<br/><br/><strong>免责声明：</strong><br/>本项目为第三方公开源码的非官方打包，与抖音及其关联方无任何关系；仅限个人非商业用途，使用者只能操作本人拥有或已获授权的账号，自动化操作可能触发平台风控（验证、限流、封禁等），风险自负。""",
+        "categories": ["影音娱乐"],
+        "icon_url": "https://raw.githubusercontent.com/JaxSupero/douyin-sparkflow-fpk/main/ICON_256.PNG",
+        "readme_url": "https://raw.githubusercontent.com/JaxSupero/douyin-sparkflow-fpk/main/README.md",
+        "bug_report_url": "https://github.com/JaxSupero/douyin-sparkflow-fpk/issues",
+        "maintainer": "halfwaystudent",
+        "maintainer_url": "https://github.com/halfwaystudent/douyin-sparkflow",
+        "distributor": "JaxSupero",
+        "distributor_url": "https://github.com/JaxSupero/douyin-sparkflow-fpk",
+        "run_as": "package",
+        "install_type": "",
+        "is_docker": False,
+        "service_port": "8787",
+        "keep_versions": KEEP_VERSIONS,
+    },
+]
+
+# 兼容旧调用点（nas_sync.py / verify_schedule.py 曾直接读这些名字）
+APP_NAME = APP_SPECS[0]["app_name"]
+KNOWN_APP_NAMES = {s["app_name"] for s in APP_SPECS}
+
+
+def app_spec(name):
+    """按 appname 取 spec；不存在返回 None。"""
+    for s in APP_SPECS:
+        if s["app_name"] == name:
+            return s
+    return None
 
 
 def detect_owner():
@@ -128,8 +186,8 @@ def norm_version(tag, name):
     return tag.lstrip("v")
 
 
-def fetch_releases(limit):
-    releases = http_json(f"https://api.github.com/repos/{REPO}/releases?per_page={max(limit, 30)}")
+def fetch_releases(spec, limit):
+    releases = http_json(f"https://api.github.com/repos/{spec['repo']}/releases?per_page={max(limit, 30)}")
     out = []
     for rel in releases:
         if rel.get("draft") or rel.get("prerelease"):
@@ -176,13 +234,13 @@ def load_published(path):
         return None
 
 
-def report_drift(published, rels):
+def report_drift(published, spec, rels):
     """同一个版本号下 size/sha256 变了 = 上游重传同名资产，必须显式告警。"""
     known = {}
     if published:
-        app = (published.get("apps") or {}).get(APP_NAME) or {}
+        app = (published.get("apps") or {}).get(spec["app_name"]) or {}
         for ver, r in (app.get("releases") or {}).items():
-            p = (r.get("packages") or {}).get("all") or {}
+            p = (r.get("packages") or {}).get(spec["arch_key"]) or {}
             if p.get("sha256"):
                 known[ver] = (p.get("size"), p["sha256"])
     for r in rels:
@@ -191,7 +249,8 @@ def report_drift(published, rels):
             continue
         old_size, old_sha = prev
         if old_sha != r["sha256"] or old_size != r["size"]:
-            print(f"  [!] 上游同 tag 重传 {r['version']}：size {old_size} → {r['size']}，"
+            print(f"  [!] {spec['app_name']} 上游同 tag 重传 {r['version']}："
+                  f"size {old_size} → {r['size']}，"
                   f"sha256 {str(old_sha)[:12]}… → {r['sha256'][:12]}…")
 
 
@@ -240,21 +299,50 @@ def stabilize(rels, settle_minutes=SETTLE_MINUTES, now=None, only_versions=None)
     return keep, skipped
 
 
-def build(rels, owner):
-    releases = {}
-    for r in rels:
-        releases[r["version"]] = {
-            "changelog": r["changelog"][:2000],
-            "updated_at": r["updated_at"],
-            "packages": {
-                # veenyi 只发布单一架构 FPK（无 _x86/_arm 后缀），用 all 作为通用包。
-                "all": {
-                    "download_url": r["download_url"],
-                    "sha256": r["sha256"],
-                    "size": r["size"],
-                }
-            },
+def build(entries, owner):
+    """
+    entries: [(spec, 稳定版本列表), ...]，每个 spec 生成一个 app 条目。
+
+    架构键取自 spec["arch_key"]：hermes-studio 用 all（通用回退包），
+    douyin_sparkflow 用 x86（包内是 x86-64 ELF，不给 arm 设备推荐）。
+    """
+    apps = {}
+    for spec, rels in entries:
+        releases = {}
+        for r in rels:
+            releases[r["version"]] = {
+                "changelog": r["changelog"][:2000],
+                "updated_at": r["updated_at"],
+                "packages": {
+                    spec["arch_key"]: {
+                        "download_url": r["download_url"],
+                        "sha256": r["sha256"],
+                        "size": r["size"],
+                    }
+                },
+            }
+        app = {
+            "display_name": spec["display_name"],
+            "desc": spec["desc"],
+            "platform": spec["platform"],
+            "categories": spec["categories"],
+            "icon_url": spec["icon_url"],
+            "readme_url": spec["readme_url"],
+            "bug_report_url": spec["bug_report_url"],
+            "maintainer": spec["maintainer"],
+            "maintainer_url": spec["maintainer_url"],
+            "distributor": spec["distributor"],
+            "distributor_url": spec["distributor_url"],
+            "run_as": spec["run_as"],
+            "install_type": spec["install_type"],
+            "is_docker": spec["is_docker"],
+            "service_port": spec["service_port"],
+            "details_updated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "releases": releases,
         }
+        if spec.get("preview_urls"):
+            app["preview_urls"] = spec["preview_urls"]
+        apps[spec["app_name"]] = app
     return {
         "schema_version": "2",
         "source_info": {
@@ -262,30 +350,10 @@ def build(rels, owner):
             "name": f"{owner} 的 {SOURCE_NAME_SUFFIX}",
             "author": owner,
             "homepage": f"https://github.com/{owner}/FnDepot",
-            "description": "收录 veenyi/Fnos-Hermes-Studio 发布的 fnOS 原生 Hermes Studio FPK。",
+            "description": "收录 " + "、".join(s["display_name"] for s, _ in entries)
+                           + " 的 fnOS 原生 FPK 安装包。",
         },
-        "apps": {
-            APP_NAME: {
-                "display_name": "Hermes Studio",
-                "desc": DESC,
-                "platform": PLATFORM,
-                "categories": CATEGORIES,
-                "icon_url": ICON_URL,
-                "preview_urls": PREVIEW_URLS,
-                "readme_url": README_URL,
-                "bug_report_url": BUG_REPORT_URL,
-                "maintainer": "EKKOLearnAI",
-                "maintainer_url": UPSTREAM,
-                "distributor": "veenyi",
-                "distributor_url": f"https://github.com/{REPO}",
-                "run_as": RUN_AS,
-                "install_type": INSTALL_TYPE,
-                "is_docker": IS_DOCKER,
-                "service_port": SERVICE_PORT,
-                "details_updated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-                "releases": releases,
-            }
-        },
+        "apps": apps,
     }
 
 
@@ -319,8 +387,8 @@ def validate(doc):
     for name, app in apps.items():
         if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]*", name):
             errs.append(f"{name}: appname 非法字符")
-        if name != APP_NAME:
-            warns.append(f"{name}: appname 与 FPK manifest 不符（应为 {APP_NAME}）")
+        if name not in KNOWN_APP_NAMES:
+            warns.append(f"{name}: appname 不在 APP_SPECS 中（应为 {sorted(KNOWN_APP_NAMES)} 之一）")
         for k in REQUIRED_APP:
             if k not in app:
                 errs.append(f"{name}: 缺少必填字段 {k}")
@@ -366,51 +434,55 @@ def validate(doc):
 
 def verify_online(doc, deep=False):
     """联网校验：资源可达、FPK content-length 与 size 一致；deep=True 时下载并核对 sha256。"""
-    app = next(iter(doc["apps"].values()))
     problems = []
-    for label, url in [("icon", app["icon_url"]), ("preview", (app.get("preview_urls") or [""])[0]),
-                       ("readme", app.get("readme_url", ""))]:
-        if not url:
-            continue
-        try:
-            req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": "fndepot-gen"})
-            with urllib.request.urlopen(req, timeout=20) as r:
-                print(f"  [{'OK' if r.status == 200 else '??'}] {label}: HTTP {r.status}")
-        except Exception as e:
-            problems.append(f"{label} 不可达: {e}")
-
-    for ver, r in app["releases"].items():
-        p = r["packages"]["all"]
-        url = p["download_url"]
-        try:
-            req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": "fndepot-gen"})
-            with urllib.request.urlopen(req, timeout=30) as resp:
-                clen = resp.headers.get("Content-Length")
-                ranges = resp.headers.get("Accept-Ranges")
-                ok = clen and int(clen) == p["size"]
-                print(f"  [{'OK' if ok else '!!'}] {ver}: size={p['size']} content-length={clen} ranges={ranges}")
-                if clen and not ok:
-                    problems.append(f"{ver}: size({p['size']}) 与 content-length({clen}) 不一致")
-        except Exception as e:
-            problems.append(f"{ver}: FPK 不可达 {e}")
-        if deep:
-            # 边下边算，不把 330MB 读进内存；落盘到 TMPDIR，避免写 /tmp 撑爆内存盘
-            h = hashlib.sha256()
-            tmp = os.path.join(tempfile.gettempdir(), ".fndepot-verify.fpk")
+    for name, app in doc["apps"].items():
+        print(f"  —— {name} ——")
+        for label, url in [("icon", app.get("icon_url", "")),
+                           ("preview", (app.get("preview_urls") or [""])[0]),
+                           ("readme", app.get("readme_url", ""))]:
+            if not url:
+                continue
             try:
-                with urllib.request.urlopen(
-                    urllib.request.Request(url, headers={"User-Agent": "fndepot-gen"}), timeout=600
-                ) as resp, open(tmp, "wb") as f:
-                    for chunk in iter(lambda: resp.read(1 << 20), b""):
-                        h.update(chunk)
-                        f.write(chunk)
-                got = h.hexdigest()
-                print(f"  [{'OK' if got == p['sha256'] else '!!'}] {ver}: sha256 实测={got[:16]}…")
-                if got != p["sha256"]:
-                    problems.append(f"{ver}: sha256 不匹配！")
-            finally:
-                if os.path.exists(tmp):
-                    os.unlink(tmp)
+                req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": "fndepot-gen"})
+                with urllib.request.urlopen(req, timeout=20) as r:
+                    print(f"  [{'OK' if r.status == 200 else '??'}] {label}: HTTP {r.status}")
+            except Exception as e:
+                problems.append(f"{name}.{label} 不可达: {e}")
+
+        for ver, r in app["releases"].items():
+            for arch, p in r["packages"].items():
+                url = p["download_url"]
+                try:
+                    req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": "fndepot-gen"})
+                    with urllib.request.urlopen(req, timeout=30) as resp:
+                        clen = resp.headers.get("Content-Length")
+                        ranges = resp.headers.get("Accept-Ranges")
+                        ok = clen and int(clen) == p["size"]
+                        print(f"  [{'OK' if ok else '!!'}] {ver}.{arch}: size={p['size']} "
+                              f"content-length={clen} ranges={ranges}")
+                        if clen and not ok:
+                            problems.append(f"{name}.{ver}.{arch}: size({p['size']}) "
+                                            f"与 content-length({clen}) 不一致")
+                except Exception as e:
+                    problems.append(f"{name}.{ver}.{arch}: FPK 不可达 {e}")
+                if deep:
+                    # 边下边算，不把 330MB 读进内存；落盘到 TMPDIR，避免写 /tmp 撑爆内存盘
+                    h = hashlib.sha256()
+                    tmp = os.path.join(tempfile.gettempdir(), ".fndepot-verify.fpk")
+                    try:
+                        with urllib.request.urlopen(
+                            urllib.request.Request(url, headers={"User-Agent": "fndepot-gen"}), timeout=600
+                        ) as resp, open(tmp, "wb") as f:
+                            for chunk in iter(lambda: resp.read(1 << 20), b""):
+                                h.update(chunk)
+                                f.write(chunk)
+                        got = h.hexdigest()
+                        print(f"  [{'OK' if got == p['sha256'] else '!!'}] {ver}.{arch}: sha256 实测={got[:16]}…")
+                        if got != p["sha256"]:
+                            problems.append(f"{name}.{ver}.{arch}: sha256 不匹配！")
+                    finally:
+                        if os.path.exists(tmp):
+                            os.unlink(tmp)
     return problems
 
 
@@ -432,26 +504,37 @@ def main():
         return 2
 
     print(f"源作者：{owner}")
-    print(f"拉取 {REPO} 最近 releases …")
-    rels = fetch_releases(args.limit + FETCH_EXTRA)
-    if not rels:
-        print("错误：没有可用 release（缺少 .fpk 资产或 sha256）", file=sys.stderr)
+    published = load_published(args.out)
+
+    entries = []
+    for spec in APP_SPECS:
+        name = spec["app_name"]
+        print(f"\n=== {name}（{spec['repo']}）===")
+        print(f"拉取 {spec['repo']} 最近 releases …")
+        rels = fetch_releases(spec, spec["keep_versions"] + FETCH_EXTRA)
+        if not rels:
+            print(f"  跳过 {name}：没有可用 release（缺少 .fpk 资产或 sha256）", file=sys.stderr)
+            continue
+
+        print("漂移检查（与已发布索引比对）：")
+        report_drift(published, spec, rels)
+
+        print(f"稳定性检查（静默期 {args.settle} 分钟 + Content-Length 对账）：")
+        stable, skipped = stabilize(rels, settle_minutes=args.settle)
+        for s in skipped:
+            print(f"  [跳过] {s}")
+        if not stable:
+            print(f"  跳过 {name}：所有版本都未通过稳定性检查", file=sys.stderr)
+            continue
+        stable = stable[:spec["keep_versions"]]
+        print(f"  收录 {len(stable)} 个版本，最新 {stable[0]['version']}")
+        entries.append((spec, stable))
+
+    if not entries:
+        print("错误：没有任何应用产出可用版本，保留原 fnpack.json 不动。", file=sys.stderr)
         return 1
 
-    print("漂移检查（与已发布索引比对）：")
-    report_drift(load_published(args.out), rels)
-
-    print(f"稳定性检查（静默期 {args.settle} 分钟 + Content-Length 对账）：")
-    stable, skipped = stabilize(rels, settle_minutes=args.settle)
-    for s in skipped:
-        print(f"  [跳过] {s}")
-    if not stable:
-        print("错误：所有版本都未通过稳定性检查，保留原 fnpack.json 不动。", file=sys.stderr)
-        return 1
-    stable = stable[:args.limit]
-
-    doc = build(stable, owner)
-    print(f"收录 {len(stable)} 个版本，最新 {stable[0]['version']}")
+    doc = build(entries, owner)
 
     errs, warns = validate(doc)
     for w in warns:
