@@ -21,7 +21,7 @@ on:
   workflow_dispatch:
     inputs:
       deep:
-        description: "实际下载每个 FPK 核对 sha256（较慢，约 330MB/版本）"
+        description: "实际下载每个 FPK 核对 sha256"
         type: boolean
         default: false
 
