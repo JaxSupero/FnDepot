@@ -38,6 +38,7 @@ import sys
 import tempfile
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
 
@@ -163,26 +164,35 @@ def detect_owner():
     return FALLBACK_OWNER
 
 
-def gh_headers(extra=None):
-    """构造 GitHub API 请求头。
+def gh_headers(url=None, extra=None):
+    """按 URL 构造 GitHub 请求头。
 
-    认证是**可选**的：设了 GITHUB_TOKEN（或 GH_TOKEN）就带 Authorization，
-    没设也能跑，但落在匿名配额上——未认证只有 60 次/小时，多应用源每轮
-    拉 releases + assets 很容易撞限流，CI 会以
-    `urllib.error.HTTPError: HTTP Error 403: rate limit exceeded` 失败。
-    带 token 是 5,000 次/小时（fine-grained PAT 授权到对应仓库即可）。
+    认证是**可选**的：设了 GITHUB_TOKEN（或 GH_TOKEN）就在**访问 api.github.com 时**
+    带上 Authorization，没设也能跑，但落在匿名配额上——未认证只有 60 次/小时，
+    而且该配额在所有 GitHub 托管 runner 的出口 IP 之间共享，多应用源每轮拉
+    releases + assets 很容易偶发 `HTTP Error 403: rate limit exceeded`。
+    带 token 是 5,000 次/小时（默认 github.token 即可读公开仓库的 Releases）。
+
+    为什么不能无脑带：release 资产的 browser_download_url 是 github.com 域名，
+    会 302 到带签名的 release-assets CDN。把 API 的 Authorization 一起送过去，
+    两套凭据冲突，实测直接返回 **401 Unauthorized**（HEAD/GET 都一样）。
+    所以只有 api.github.com 的 REST 调用才附加凭据，其余（含 icon/preview/readme
+    的 raw 地址、FPK 下载）一律匿名。
     """
-    h = {"User-Agent": "fndepot-gen", "Accept": "application/vnd.github+json"}
-    tok = (os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN") or "").strip()
-    if tok:
-        h["Authorization"] = f"Bearer {tok}"
+    h = {"User-Agent": "fndepot-gen"}
+    host = urllib.parse.urlsplit(url).hostname if url else "api.github.com"
+    if host == "api.github.com":
+        h["Accept"] = "application/vnd.github+json"
+        tok = (os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN") or "").strip()
+        if tok:
+            h["Authorization"] = f"Bearer {tok}"
     if extra:
         h.update(extra)
     return h
 
 
 def http_json(url, timeout=30):
-    req = urllib.request.Request(url, headers=gh_headers())
+    req = urllib.request.Request(url, headers=gh_headers(url))
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
             return json.load(r)
@@ -256,7 +266,7 @@ def fetch_releases(spec, limit):
 
 def head_content_length(url, timeout=30):
     """取下载 URL（跟随 302 到 release-assets CDN）的 Content-Length。"""
-    req = urllib.request.Request(url, method="HEAD", headers=gh_headers())
+    req = urllib.request.Request(url, method="HEAD", headers=gh_headers(url))
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         clen = resp.headers.get("Content-Length")
         return int(clen) if clen and str(clen).isdigit() else None
@@ -480,7 +490,7 @@ def verify_online(doc, deep=False):
             if not url:
                 continue
             try:
-                req = urllib.request.Request(url, method="HEAD", headers=gh_headers())
+                req = urllib.request.Request(url, method="HEAD", headers=gh_headers(url))
                 with urllib.request.urlopen(req, timeout=20) as r:
                     print(f"  [{'OK' if r.status == 200 else '??'}] {label}: HTTP {r.status}")
             except Exception as e:
@@ -490,7 +500,7 @@ def verify_online(doc, deep=False):
             for arch, p in r["packages"].items():
                 url = p["download_url"]
                 try:
-                    req = urllib.request.Request(url, method="HEAD", headers=gh_headers())
+                    req = urllib.request.Request(url, method="HEAD", headers=gh_headers(url))
                     with urllib.request.urlopen(req, timeout=30) as resp:
                         clen = resp.headers.get("Content-Length")
                         ranges = resp.headers.get("Accept-Ranges")
@@ -508,7 +518,7 @@ def verify_online(doc, deep=False):
                     tmp = os.path.join(tempfile.gettempdir(), ".fndepot-verify.fpk")
                     try:
                         with urllib.request.urlopen(
-                            urllib.request.Request(url, headers=gh_headers()), timeout=600
+                            urllib.request.Request(url, headers=gh_headers(url)), timeout=600
                         ) as resp, open(tmp, "wb") as f:
                             for chunk in iter(lambda: resp.read(1 << 20), b""):
                                 h.update(chunk)
