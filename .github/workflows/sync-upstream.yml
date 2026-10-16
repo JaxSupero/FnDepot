@@ -21,7 +21,7 @@ on:
   workflow_dispatch:
     inputs:
       deep:
-        description: "实际下载每个 FPK 核对 sha256"
+        description: "实际下载每个 FPK 核对 sha256（较慢，约 330MB/版本）"
         type: boolean
         default: false
 
@@ -48,7 +48,30 @@ jobs:
         env:
           # 自动从 git remote 推断仓库属主，无需手填
           FNDEPOT_OWNER: ${{ github.repository_owner }}
+          # 跨仓库读 Releases 需要能访问上游仓库的凭据。匿名调 api.github.com
+          # 只有 60 次/小时，而且配额在**所有 GitHub 托管 runner 的出口 IP 之间共享**，
+          # 所以偶发 `HTTP 403: rate limit exceeded`（实测 #77、#83 即如此，
+          # 其余轮次只是恰好分到还有余量的 IP）。
+          # 默认 github.token 按设计只覆盖本仓库，未必读得到上游 Releases，
+          # 因此不能直接 `|| github.token` 兜底——那会在 secret 缺失时把匿名
+          # 403 换成跨仓库 404。这里按「secret → 探测 github.token → 匿名」降级。
+          FNDEPOT_READ_TOKEN: ${{ secrets.FNDEPOT_READ_TOKEN }}
+          DEFAULT_TOKEN: ${{ github.token }}
         run: |
+          export GITHUB_TOKEN="$FNDEPOT_READ_TOKEN"
+          if [ -z "$GITHUB_TOKEN" ]; then
+            if curl -fsS -o /dev/null --max-time 20 \
+                 -H "Authorization: Bearer $DEFAULT_TOKEN" \
+                 -H "Accept: application/vnd.github+json" \
+                 "https://api.github.com/repos/veenyi/Fnos-Hermes-Studio/releases?per_page=1"; then
+              export GITHUB_TOKEN="$DEFAULT_TOKEN"
+              echo "GitHub API 认证：默认 github.token（可读上游 Releases）"
+            else
+              echo "::warning::未配置 FNDEPOT_READ_TOKEN，且默认 github.token 读不到上游仓库 Releases；本次退回匿名配额（60 次/小时，可能 403）"
+            fi
+          else
+            echo "GitHub API 认证：FNDEPOT_READ_TOKEN"
+          fi
           if [ "${{ inputs.deep }}" = "true" ]; then
             python3 gen_fnpack.py --verify --deep
           else
