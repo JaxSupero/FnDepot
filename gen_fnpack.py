@@ -37,6 +37,7 @@ import subprocess
 import sys
 import tempfile
 import time
+import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 
@@ -162,10 +163,46 @@ def detect_owner():
     return FALLBACK_OWNER
 
 
+def gh_headers(extra=None):
+    """构造 GitHub API 请求头。
+
+    认证是**可选**的：设了 GITHUB_TOKEN（或 GH_TOKEN）就带 Authorization，
+    没设也能跑，但落在匿名配额上——未认证只有 60 次/小时，多应用源每轮
+    拉 releases + assets 很容易撞限流，CI 会以
+    `urllib.error.HTTPError: HTTP Error 403: rate limit exceeded` 失败。
+    带 token 是 5,000 次/小时（fine-grained PAT 授权到对应仓库即可）。
+    """
+    h = {"User-Agent": "fndepot-gen", "Accept": "application/vnd.github+json"}
+    tok = (os.environ.get("GITHUB_TOKEN") or os.environ.get("GH_TOKEN") or "").strip()
+    if tok:
+        h["Authorization"] = f"Bearer {tok}"
+    if extra:
+        h.update(extra)
+    return h
+
+
 def http_json(url, timeout=30):
-    req = urllib.request.Request(url, headers={"User-Agent": "fndepot-gen", "Accept": "application/vnd.github+json"})
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        return json.load(r)
+    req = urllib.request.Request(url, headers=gh_headers())
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            return json.load(r)
+    except urllib.error.HTTPError as exc:
+        if exc.code == 403:
+            limit = ""
+            try:  # GitHub 把剩余额度与重置时间放在响应头里，读出来才有诊断价值
+                limit = f"（{exc.headers.get('X-RateLimit-Remaining', '?')}"
+                reset = exc.headers.get("X-RateLimit-Reset")
+                if reset:
+                    limit += f"，{int(reset) - int(datetime.now(timezone.utc).timestamp())}s 后重置"
+                limit += "）"
+            except Exception:
+                pass
+            print(
+                f"::error::GitHub API 403（大概率是速率限流{limit}）。"
+                f"请给本工作流设置 GITHUB_TOKEN 环境变量（env 或 secret）后重跑。",
+                file=sys.stderr,
+            )
+        raise
 
 
 def parse_ts(s):
@@ -219,7 +256,7 @@ def fetch_releases(spec, limit):
 
 def head_content_length(url, timeout=30):
     """取下载 URL（跟随 302 到 release-assets CDN）的 Content-Length。"""
-    req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": "fndepot-gen"})
+    req = urllib.request.Request(url, method="HEAD", headers=gh_headers())
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         clen = resp.headers.get("Content-Length")
         return int(clen) if clen and str(clen).isdigit() else None
@@ -443,7 +480,7 @@ def verify_online(doc, deep=False):
             if not url:
                 continue
             try:
-                req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": "fndepot-gen"})
+                req = urllib.request.Request(url, method="HEAD", headers=gh_headers())
                 with urllib.request.urlopen(req, timeout=20) as r:
                     print(f"  [{'OK' if r.status == 200 else '??'}] {label}: HTTP {r.status}")
             except Exception as e:
@@ -453,7 +490,7 @@ def verify_online(doc, deep=False):
             for arch, p in r["packages"].items():
                 url = p["download_url"]
                 try:
-                    req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": "fndepot-gen"})
+                    req = urllib.request.Request(url, method="HEAD", headers=gh_headers())
                     with urllib.request.urlopen(req, timeout=30) as resp:
                         clen = resp.headers.get("Content-Length")
                         ranges = resp.headers.get("Accept-Ranges")
@@ -471,7 +508,7 @@ def verify_online(doc, deep=False):
                     tmp = os.path.join(tempfile.gettempdir(), ".fndepot-verify.fpk")
                     try:
                         with urllib.request.urlopen(
-                            urllib.request.Request(url, headers={"User-Agent": "fndepot-gen"}), timeout=600
+                            urllib.request.Request(url, headers=gh_headers()), timeout=600
                         ) as resp, open(tmp, "wb") as f:
                             for chunk in iter(lambda: resp.read(1 << 20), b""):
                                 h.update(chunk)
