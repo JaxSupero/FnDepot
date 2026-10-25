@@ -28,7 +28,7 @@
       "install_type": "",
       "is_docker": false,
       "service_port": "8648",
-      "details_updated_at": "2026-10-25T19:31:56+00:00",
+      "details_updated_at": "2026-10-25T22:04:39+00:00",
       "releases": {
         "0.7.39-1": {
           "changelog": "Hermes Studio for fnOS — 稳定版 v0.7.39-1\n\n**打包追踪的上游版本**（由 auto-update.yml 自动对齐）：hermes-web-ui `0.7.39` ｜ hermes-agent `v0.22.5`\n\n## 本次更新（v0.7.39-1）\n- 跟随官方 GitHub Release 预构建产物（EKKOLearnAI/hermes-studio）自动对齐 hermes-web-ui 版本，比 npm 发布更及时。\n- 内置 Hermes Agent 离线源码包（按 NousResearch/hermes-agent 最新 release 标签钉版本），安装时跳过 GitHub git clone，适合 NAS 弱网环境。\n- Agent browser tools + TUI 依赖预装进 FPK，首启跳过后台 npm install，启动更快。\n- bundled node 运行时不入库，CI 用 Node v24 编译含原生 node-pty，安装走离线复制，避免 fnOS 缺 gcc 导致安装卡死。\n- 安装前自动环境检查：Node.js、8648 端口占用、清理残留进程 / IPC socket / PID 文件、修复数据目录属主。\n\n> ⚠️ 若从旧版本升级仍异常，建议先 pkill -9 -f hermes 并卸载旧版后再重装。\n\n## 安装说明\n1. 飞牛应用中心 -> 手动安装 -> 选择本 fpk。\n2. 安装后首次启动会自动在后台安装 Hermes Agent（约 1-3 分钟），请稍候。\n3. 默认监听 8648 端口，点击应用图标在浏览器打开。\n\n固定版本请从本 Release 附件下载 fnos-hermes-studio_v0.7.39-1.fpk；\n最新滚动版见 Release latest。",
@@ -36,8 +36,8 @@
           "packages": {
             "all": {
               "download_url": "https://github.com/veenyi/Fnos-Hermes-Studio/releases/download/v0.7.39-1/fnos-hermes-studio_v0.7.39-1.fpk",
-              "sha256": "a02a28f17d4fb1b39db4282010af3a313420785110097bbc116609667ab74fc4",
-              "size": 378544081
+              "sha256": "080a74a30d03e3e79b6dec91f5d6478670544f31e23c409f89b56b68421de76f",
+              "size": 378536200
             }
           }
         },
@@ -165,8 +165,19 @@
       "install_type": "",
       "is_docker": false,
       "service_port": "8787",
-      "details_updated_at": "2026-10-25T19:31:56+00:00",
+      "details_updated_at": "2026-10-25T22:04:39+00:00",
       "releases": {
+        "1.1.13": {
+          "changelog": "抖音 SparkFlow for fnOS（原生部署，非 Docker）\n- FPK version: `1.1.13`\n- Upstream commit: `71a49e4620aaa44f0cc29b4eaef2edac33623082`\n- Upstream date: `2026-10-25`\n\n**更新说明**\n\n上游本次仅有维护类提交，功能无变化。\n\n---\n仅支持 x86_64；上游许可仅限非商业用途。",
+          "updated_at": "2026-10-25T19:44:19Z",
+          "packages": {
+            "x86": {
+              "download_url": "https://github.com/JaxSupero/douyin-sparkflow-fpk/releases/download/v1.1.13/fnos-douyin_sparkflow_v1.1.13.fpk",
+              "sha256": "12a53e2d273084b0224f9f1d4a0a0df08797c73c632197657db33e945c5394d1",
+              "size": 350116004
+            }
+          }
+        },
         "1.1.12": {
           "changelog": "抖音 SparkFlow for fnOS（原生部署，非 Docker）\n- FPK version: `1.1.12`\n- Upstream commit: `903b7b35f756184c8be7933edab9d5ed7b8ea6f5`\n- Upstream date: `2026-10-25`\n\n**更新说明**\n\n上游本次仅有维护类提交，功能无变化。\n\n---\n仅支持 x86_64；上游许可仅限非商业用途。",
           "updated_at": "2026-10-25T06:14:43Z",
@@ -265,17 +276,6 @@
               "size": 744894555
             }
           }
-        },
-        "1.1.2": {
-          "changelog": "抖音 SparkFlow for fnOS（原生部署，非 Docker）\n- FPK version: `1.1.2`\n- Upstream commit: `1eba90fab90af28aff4039074e0de9056f454588`\n- Upstream date: `2026-10-12`\n\n**更新说明**\n\n原生部署改版（1.1.0）：改为飞牛原生应用（不再依赖 Docker 镜像构建）；运行时使用应用中心 Python 3.12 + Node.js v24；内置 Playwright Chromium 与 noVNC 登录桌面；安装/升级不再联网安装依赖，速度和成功率大幅提升。\n\n---\n仅支持 x86_64；上游许可仅限非商业用途。",
-          "updated_at": "2026-10-12T19:11:01Z",
-          "packages": {
-            "x86": {
-              "download_url": "https://github.com/JaxSupero/douyin-sparkflow-fpk/releases/download/v1.1.2/fnos-douyin_sparkflow_v1.1.2.fpk",
-              "sha256": "c3e24765f3b0b5bedea2e8864d59e0fafd35021f13527fc068eee7dbbb269ca7",
-              "size": 744864927
-            }
-          }
         }
       }
     },
@@ -300,7 +300,7 @@
       "install_type": "",
       "is_docker": true,
       "service_port": "8088",
-      "details_updated_at": "2026-10-25T19:31:56+00:00",
+      "details_updated_at": "2026-10-25T22:04:39+00:00",
       "releases": {
         "1.0.3-b1": {
           "changelog": "### 新增\n- 建用户时可以同时创建一个默认专家。权限按页面 Tab 拆开，也可以按组折叠\n- 用户组可以限制技能包、知识库、连接器、模型、存储和专家谁能看见\n- 技能包可以共享，并用文件树编辑。创建专家、团队等资源时可以选头像\n- 表单和对话可以让 AI 润色。搜索增加 DeepSeek 与元宝，模型支持 OpenAI Responses API\n\n### 修复\n- 云端协同共享后可以直接对话。回复进行中不会被刷新冲掉，也不能删掉这场会话\n- 手机截图写到专家自己的工作区。只改定时任务文案时，间隔任务不再重新计时\n- 浏览器工作台恢复中文输入。主动关怀等对话安静后再发\n- 向导密码随数据目录迁移。Linux 桌面无边框窗口可以拖边缘调整大小\n\n### 变更\n- 云端协同默认打码对端地址和账号。共享来的资源在头像上做标记\n- 支持子路径部署。飞牛原生包标记为 x86\n\n### 安全\n- 密钥改为加密保存，旧明文仍能读出。插件上传和解压限制了体积\n\n\n## Downloads\n\n### Windows\n\n#### Desktop installer (Recommended)\n- [64-bit (Recommended)](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b1/Octop-desktop-windows-amd64-1.0.3b1.exe) | [ARM64](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b1/Octop-desktop-windows-arm64-1.0.3b1.exe)\n\n#### Portable\n- [64-bit](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b1/Octop-portable-windows-amd64-1.0.3b1.zip) | [ARM64](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b1/Octop-portable-windows-arm64-1.0.3b1.zip)\n\n### macOS\n\n#### Desktop installer (Recommended)\n- [Apple Silicon](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b1/Octop-desktop-darwin-arm64-1.0.3b1.dmg) | [Intel](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b1/Octop-desktop-darwin-amd64-1.0.3b1.dmg)\n\n#### Portable\n- [Apple Silicon](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b1/Octop-portable-darwin-arm64-1.0.3b1.zip) | [Intel](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b1/Octop-portable-darwin-amd64-1.0.3b1.zip)\n\n### Linux\n\n#### Desktop installer (Recommended)\n- [64-bit](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b1/Octop-desktop-linux-amd64-1.0.3b1.tar.gz) | [ARM64](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b1/Octop-desktop-linux-arm64-1.0.3b1.tar.gz)\n\n#### Portable\n- [64-bit](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b1/Octop-portable-linux-amd64-1.0.3b1.zip) | [ARM64](https://github.com/TencentCloud/Octop/re",
@@ -436,7 +436,7 @@
       "install_type": "",
       "is_docker": false,
       "service_port": "8089",
-      "details_updated_at": "2026-10-25T19:31:56+00:00",
+      "details_updated_at": "2026-10-25T22:04:39+00:00",
       "releases": {
         "1.0.3-b1": {
           "changelog": "### 新增\n- 建用户时可以同时创建一个默认专家。权限按页面 Tab 拆开，也可以按组折叠\n- 用户组可以限制技能包、知识库、连接器、模型、存储和专家谁能看见\n- 技能包可以共享，并用文件树编辑。创建专家、团队等资源时可以选头像\n- 表单和对话可以让 AI 润色。搜索增加 DeepSeek 与元宝，模型支持 OpenAI Responses API\n\n### 修复\n- 云端协同共享后可以直接对话。回复进行中不会被刷新冲掉，也不能删掉这场会话\n- 手机截图写到专家自己的工作区。只改定时任务文案时，间隔任务不再重新计时\n- 浏览器工作台恢复中文输入。主动关怀等对话安静后再发\n- 向导密码随数据目录迁移。Linux 桌面无边框窗口可以拖边缘调整大小\n\n### 变更\n- 云端协同默认打码对端地址和账号。共享来的资源在头像上做标记\n- 支持子路径部署。飞牛原生包标记为 x86\n\n### 安全\n- 密钥改为加密保存，旧明文仍能读出。插件上传和解压限制了体积\n\n\n## Downloads\n\n### Windows\n\n#### Desktop installer (Recommended)\n- [64-bit (Recommended)](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b1/Octop-desktop-windows-amd64-1.0.3b1.exe) | [ARM64](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b1/Octop-desktop-windows-arm64-1.0.3b1.exe)\n\n#### Portable\n- [64-bit](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b1/Octop-portable-windows-amd64-1.0.3b1.zip) | [ARM64](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b1/Octop-portable-windows-arm64-1.0.3b1.zip)\n\n### macOS\n\n#### Desktop installer (Recommended)\n- [Apple Silicon](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b1/Octop-desktop-darwin-arm64-1.0.3b1.dmg) | [Intel](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b1/Octop-desktop-darwin-amd64-1.0.3b1.dmg)\n\n#### Portable\n- [Apple Silicon](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b1/Octop-portable-darwin-arm64-1.0.3b1.zip) | [Intel](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b1/Octop-portable-darwin-amd64-1.0.3b1.zip)\n\n### Linux\n\n#### Desktop installer (Recommended)\n- [64-bit](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b1/Octop-desktop-linux-amd64-1.0.3b1.tar.gz) | [ARM64](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b1/Octop-desktop-linux-arm64-1.0.3b1.tar.gz)\n\n#### Portable\n- [64-bit](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b1/Octop-portable-linux-amd64-1.0.3b1.zip) | [ARM64](https://github.com/TencentCloud/Octop/re",
