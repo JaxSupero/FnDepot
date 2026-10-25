@@ -1,7 +1,7 @@
-# FnDepot 应用源 · Hermes Studio / 抖音 SparkFlow
+# FnDepot 应用源 · Hermes Studio / 抖音 SparkFlow / Octop
 
 符合 [FnDepot 外部应用源 V2 规范](https://github.com/EWEDLCM/FnDepot/blob/main/README.md) 的第三方应用源，
-收录 **Hermes Studio** 与 **抖音 SparkFlow** 在 fnOS（飞牛）上的原生 FPK 安装包。
+收录 **Hermes Studio**、**抖音 SparkFlow** 与 **Octop** 在 fnOS（飞牛）上的 FPK 安装包。
 
 ## 在客户端中添加本源
 
@@ -20,6 +20,16 @@ https://github.com/<你的用户名>/FnDepot
 |---|---|---|---|---|
 | Hermes Studio | `hermes-studio` | x86 | [veenyi](https://github.com/veenyi/Fnos-Hermes-Studio) | [EKKOLearnAI/hermes-studio](https://github.com/EKKOLearnAI/hermes-studio) |
 | 抖音 SparkFlow | `douyin_sparkflow` | x86 | [JaxSupero](https://github.com/JaxSupero/douyin-sparkflow-fpk) | [halfwaystudent/douyin-sparkflow](https://github.com/halfwaystudent/douyin-sparkflow) |
+| Octop（Docker 版） | `octop` | all（容器按本机架构拉镜像） | [TencentCloud](https://github.com/TencentCloud/Octop) | 同左（官方自打包） |
+| Octop 本地版 | `octop-native` | x86 + arm64 | [TencentCloud](https://github.com/TencentCloud/Octop) | 同左（官方自打包） |
+
+Octop 的上游一个 Release 里挂三个 FPK（`Octop-fnos-docker-*`、`Octop-fnos-native-*`、
+`Octop-fnos-native-arm64-*`），因此拆成两个 appname 收录，本地版一个 appname 下同时给
+`packages.x86` 与 `packages.arm`。注意 `Octop-fnos-native-arm64-…` 也包含 `fnos-native-`，
+`APP_SPECS` 里 x86 的 `pattern` 用了负向前查 `-fnos-native-(?!arm64)` 排掉 arm64 包。
+
+Octop 的 tag 形如 `v1.0.3b1`，`b1` 前没有连字符，不是合法 SemVer，过不了索引的版本号校验；
+`norm_version` 会把它规范化成 `1.0.3-b1` 作为 `releases` 的键（下载地址、size、sha256 不变）。
 
 本仓库不托管任何 FPK 文件，只提供索引。安装包直接从各自的 GitHub Releases 下载，
 因此包体（Hermes Studio 约 330MB/版本、抖音 SparkFlow 约 711MB/版本）不会占本仓库空间。
@@ -27,7 +37,8 @@ https://github.com/<你的用户名>/FnDepot
 ### 新增收录一个应用
 
 1. 在 `gen_fnpack.py` 的 `APP_SPECS` 里追加一项（appname 必须等于 FPK manifest 的 `appname`，
-   大小写敏感；`arch_key` 填 `all`/`x86`/`arm`）；
+   大小写敏感；`arch_key` 填 `all`/`x86`/`arm`；一个 Release 挂多个架构的 FPK 时用
+   `arch_assets` 给每个架构指定文件名 `pattern`）；
 2. 把新的 appname 加进 `.github/workflows/sync-upstream.yml` 合规校验里的 `KNOWN` 集合；
 3. 重新生成并提交索引：`python3 gen_fnpack.py --verify --owner <你的用户名>`。
 
@@ -193,7 +204,7 @@ FnDepot/
 ## 规范遵循说明
 
 - `schema_version` 为字符串 `"2"`
-- `apps` 的键（`hermes-studio`、`douyin_sparkflow`）与各自 FPK manifest 中的 `appname` 完全一致（区分大小写）
+- `apps` 的键（`hermes-studio`、`douyin_sparkflow`、`octop`、`octop-native`）与各自 FPK manifest 中的 `appname` 完全一致（区分大小写）
 - `categories` 取自九个固定分类，且不超过两个
 - 每个安装包均提供 `download_url`、`size`（字节整数）与 `sha256`
 - `source_info` 未使用 "FnDepot" 作为源名或作者名；`maintainer` 与 `distributor` 分别标注上游开发者与打包者

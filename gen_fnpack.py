@@ -130,6 +130,58 @@ APP_SPECS = [
         "service_port": "8787",
         "keep_versions": KEEP_VERSIONS,
     },
+    {
+        "app_name": "octop",
+        "repo": "TencentCloud/Octop",
+        "upstream": "https://github.com/TencentCloud/Octop",
+        # Docker 版：包里只有 docker-compose，运行时按本机架构拉
+        # ghcr.io/tencentcloud/octop:<ver>（manifest platform=all），x86/arm 共用一份。
+        "arch_key": "all",
+        "platform": ["all"],
+        "display_name": "Octop",
+        "desc": """腾讯开源的多用户多智能体 AI 助手平台，支持 Web 控制台、CLI、IM 渠道与定时任务，数据全部本地存储。<br/><br/><strong>安装后使用：</strong><br/>首次会从 ghcr.io 下载与本包版本对应的镜像（设备需能访问 GitHub Container Registry），请等到应用中心显示「运行中」再点「打开」，或访问 http://设备IP:8088，用安装向导里设置的账号登录。<br/>忘记密码可到数据目录 octop-login.txt 查看备份（仅记录安装或应用「设置」改密；网页改密后不会自动更新）。<br/><br/><strong>首次登录后：</strong><br/>请在控制台「设置 → 模型」配置 API Key，并按需配置 IM 渠道、远程桌面、浏览器等。<br/><br/>注意：Docker 版通过容器部署，会拉取 ghcr.io/tencentcloud/octop 上与本包版本相同的镜像。""",
+        "categories": ["AI赋能", "系统工具"],
+        "icon_url": "https://raw.githubusercontent.com/TencentCloud/Octop/main/fnos/docker/ICON_256.PNG",
+        "readme_url": "https://raw.githubusercontent.com/TencentCloud/Octop/main/fnos/README.md",
+        "bug_report_url": "https://github.com/TencentCloud/Octop/issues",
+        "maintainer": "TencentCloud",
+        "maintainer_url": "https://github.com/TencentCloud/Octop",
+        "distributor": "TencentCloud",
+        "distributor_url": "https://github.com/TencentCloud/Octop",
+        "run_as": "package",   # config/privilege: defaults.run-as
+        "install_type": "",
+        "is_docker": True,
+        "service_port": "8088",
+        "keep_versions": KEEP_VERSIONS,
+    },
+    {
+        "app_name": "octop-native",
+        "repo": "TencentCloud/Octop",
+        "upstream": "https://github.com/TencentCloud/Octop",
+        # 本地版：复用飞牛「Python 3.12」，包内是各架构的 site-packages，
+        # 因此 x86 与 ARM 是两个资产，同一个 appname（manifest 仅改 platform）。
+        "arch_key": "x86",
+        "arch_assets": [
+            {"arch": "x86", "pattern": r"-fnos-native-(?!arm64)"},
+            {"arch": "arm", "pattern": r"-fnos-native-arm64-"},
+        ],
+        "platform": ["x86", "arm"],
+        "display_name": "Octop 本地版",
+        "desc": """腾讯开源的多用户多智能体 AI 助手平台，支持 Web 控制台、CLI、IM 渠道与定时任务，数据全部本地存储。<br/><br/><strong>安装后使用：</strong><br/>请等到应用中心显示「运行中」再点「打开」，或访问 http://设备IP:8089，用安装向导里设置的用户名或邮箱登录。<br/>忘记密码时打开飞牛「文件管理」，进入应用共享里的 Octop 数据目录，查看 octop-login.txt（仅备份安装或应用「设置」改密；网页改密后不会自动更新）；也可在应用「设置」中改密。<br/><br/><strong>命令行管理：</strong><br/>支持官方 octop CLI（octop provider list / agent list / user list / skills / backup 等，详见 octop --help）。<br/><br/><strong>首次登录后：</strong><br/>请在控制台「设置 → 模型」配置 API Key，并按需配置 IM 渠道、远程桌面、浏览器等。<br/><br/>注意：本地版直接运行在飞牛主机上，安装前会自动关联安装「Python 3.12」开发工具。""",
+        "categories": ["AI赋能", "系统工具"],
+        "icon_url": "https://raw.githubusercontent.com/TencentCloud/Octop/main/fnos/native/ICON_256.PNG",
+        "readme_url": "https://raw.githubusercontent.com/TencentCloud/Octop/main/fnos/README.md",
+        "bug_report_url": "https://github.com/TencentCloud/Octop/issues",
+        "maintainer": "TencentCloud",
+        "maintainer_url": "https://github.com/TencentCloud/Octop",
+        "distributor": "TencentCloud",
+        "distributor_url": "https://github.com/TencentCloud/Octop",
+        "run_as": "root",      # config/privilege: defaults.run-as（需要 sudo / 远程桌面）
+        "install_type": "",
+        "is_docker": False,
+        "service_port": "8089",
+        "keep_versions": KEEP_VERSIONS,
+    },
 ]
 
 # 兼容旧调用点（nas_sync.py / verify_schedule.py 曾直接读这些名字）
@@ -229,32 +281,84 @@ def norm_version(tag, name):
     """
     veenyi 的 tag 形如 v0.7.25-1：主版本是 web-ui 版本，-1 是打包迭代号。
     FnDepot 客户端要求 SemVer 可比较，直接用 tag 去掉 v 前缀即可（0.7.25-1 是合法 SemVer 预发布号）。
+
+    Octop 的 tag 形如 v1.0.3b1 —— "b1" 前面没有连字符，不是合法 SemVer 预发布号，
+    也过不了 validate 的 `^\d+(\.\d+)*(-\S+)?$`。这里规范化成 1.0.3-b1：
+    只影响索引里的版本键，下载地址/sha256/size 都不变。
     """
-    return tag.lstrip("v")
+    v = tag.lstrip("v")
+    m = re.fullmatch(r"(\d+(?:\.\d+)*)[bB](\d+)", v)
+    if m:
+        return f"{m.group(1)}-b{m.group(2)}"
+    return v
+
+
+def arch_entries(spec):
+    """spec 声明的架构清单；老 spec 只有 arch_key，视为单一架构、按第一个 .fpk 取名。"""
+    return spec.get("arch_assets") or [{"arch": spec["arch_key"]}]
+
+
+def pick_packages(spec, rel):
+    """
+    按 arch_entries 从 release 资产里挑出每个架构的 FPK，返回 {arch: {url,sha256,size,...}}。
+
+    为什么要按 pattern 挑：Octop 一个 release 里挂了三个 FPK
+    （docker / native / native-arm64），而 "Octop-fnos-native-arm64-…" 也包含
+    "fnos-native-"，所以 x86 的 pattern 用负向前查 (?-arm64) 排除掉 arm64 包；
+    否则 x86 位会拿到 arm64 的字节，装错架构必然启动失败。
+    """
+    assets = rel.get("assets") or []
+    picked = {}
+    for ent in arch_entries(spec):
+        arch = ent["arch"]
+        pat = ent.get("pattern")
+        cand = None
+        for a in assets:
+            if not a["name"].endswith(".fpk"):
+                continue
+            if pat and not re.search(pat, a["name"]):
+                continue
+            cand = a
+            break
+        if not cand:
+            continue
+        digest = (cand.get("digest") or "").replace("sha256:", "").strip().lower()
+        if not re.fullmatch(r"[0-9a-f]{64}", digest):
+            print(f"  ! {rel['tag_name']}/{cand['name']}：GitHub 未提供 sha256 digest，跳过该架构",
+                  file=sys.stderr)
+            continue
+        picked[arch] = {
+            "download_url": cand["browser_download_url"],
+            "sha256": digest,
+            "size": cand["size"],
+            "asset_name": cand["name"],
+            "asset_updated_at": cand.get("updated_at"),
+        }
+    return picked
 
 
 def fetch_releases(spec, limit):
     releases = http_json(f"https://api.github.com/repos/{spec['repo']}/releases?per_page={max(limit, 30)}")
+    primary = arch_entries(spec)[0]["arch"]
     out = []
     for rel in releases:
         if rel.get("draft") or rel.get("prerelease"):
             continue
-        fpk = next((a for a in rel.get("assets", []) if a["name"].endswith(".fpk")), None)
-        if not fpk:
+        pkgs = pick_packages(spec, rel)
+        if not pkgs:
             continue
-        digest = (fpk.get("digest") or "").replace("sha256:", "").strip().lower()
-        if not re.fullmatch(r"[0-9a-f]{64}", digest):
-            print(f"  ! 跳过 {rel['tag_name']}：GitHub 未提供 sha256 digest，无法保证校验安全", file=sys.stderr)
+        if primary not in pkgs:
+            # 主架构缺失的版本不能收录：客户端会拿不到能装的包
+            print(f"  ! 跳过 {rel['tag_name']}：缺少主架构 {primary} 的 FPK", file=sys.stderr)
             continue
+        upd = max((p.get("asset_updated_at") or "" for p in pkgs.values()), default="") or None
         out.append(
             {
-                "version": norm_version(rel["tag_name"], fpk["name"]),
+                "version": norm_version(rel["tag_name"], pkgs[primary]["asset_name"]),
                 "tag": rel["tag_name"],
-                "download_url": fpk["browser_download_url"],
-                "sha256": digest,
-                "size": fpk["size"],
+                "packages": pkgs,
                 "updated_at": rel.get("published_at"),
-                "asset_updated_at": fpk.get("updated_at"),
+                "asset_updated_at": upd,
                 "changelog": (rel.get("body") or "").strip() or f"见 {rel['html_url']}",
                 "html_url": rel["html_url"],
             }
@@ -287,18 +391,25 @@ def report_drift(published, spec, rels):
     if published:
         app = (published.get("apps") or {}).get(spec["app_name"]) or {}
         for ver, r in (app.get("releases") or {}).items():
-            p = (r.get("packages") or {}).get(spec["arch_key"]) or {}
-            if p.get("sha256"):
-                known[ver] = (p.get("size"), p["sha256"])
+            archs = {}
+            for arch, p in (r.get("packages") or {}).items():
+                if p.get("sha256"):
+                    archs[arch] = (p.get("size"), p["sha256"])
+            if archs:
+                known[ver] = archs
     for r in rels:
         prev = known.get(r["version"])
         if not prev:
             continue
-        old_size, old_sha = prev
-        if old_sha != r["sha256"] or old_size != r["size"]:
-            print(f"  [!] {spec['app_name']} 上游同 tag 重传 {r['version']}："
-                  f"size {old_size} → {r['size']}，"
-                  f"sha256 {str(old_sha)[:12]}… → {r['sha256'][:12]}…")
+        for arch, p in r["packages"].items():
+            if arch not in prev:
+                print(f"  [+] {spec['app_name']} {r['version']} 新增架构 {arch}（size {p['size']}）")
+                continue
+            old_size, old_sha = prev[arch]
+            if old_sha != p["sha256"] or old_size != p["size"]:
+                print(f"  [!] {spec['app_name']} 上游同 tag 重传 {r['version']}[{arch}]："
+                      f"size {old_size} → {p['size']}，"
+                      f"sha256 {str(old_sha)[:12]}… → {p['sha256'][:12]}…")
 
 
 def stabilize(rels, settle_minutes=SETTLE_MINUTES, now=None, only_versions=None):
@@ -314,6 +425,11 @@ def stabilize(rels, settle_minutes=SETTLE_MINUTES, now=None, only_versions=None)
     """
     now = now or datetime.now(timezone.utc)
     check = None if only_versions is None else set(only_versions)
+    skip_head = os.environ.get("FNDEPOT_SKIP_HEAD") == "1"
+    if skip_head:
+        print("  ! FNDEPOT_SKIP_HEAD=1：本轮只信任 API 的 size，不做 Content-Length 对账"
+              "（仅限本机网络打不开 github.com 时排障用；CI/定时同步必须走完整对账）",
+              file=sys.stderr)
     keep, skipped = [], []
     for r in rels:
         if check is not None and r["version"] not in check:
@@ -325,24 +441,38 @@ def stabilize(rels, settle_minutes=SETTLE_MINUTES, now=None, only_versions=None)
             if age < settle_minutes:
                 skipped.append(f"{r['version']}：资产 {age:.0f} 分钟前刚被替换，等待 {settle_minutes} 分钟静默期")
                 continue
+        if skip_head:
+            keep.append(r)
+            continue
         clen, ok = None, False
-        for attempt in range(HEAD_RETRIES):
-            try:
-                clen = head_content_length(r["download_url"])
-            except Exception as e:
-                clen = None
-                if attempt == HEAD_RETRIES - 1:
-                    skipped.append(f"{r['version']}：HEAD 取不到 Content-Length（{e}）")
+        # 一个版本可能挂多个架构的包（Octop 一个 release 挂 3 个 FPK），
+        # 任何一份对不上就跳过整个版本：装到不对的字节比少收录一个版本糟。
+        bad = None
+        for arch, pkg in r["packages"].items():
+            clen = None
+            ok = False
+            for attempt in range(HEAD_RETRIES):
+                try:
+                    clen = head_content_length(pkg["download_url"])
+                except Exception as e:
+                    clen = None
+                    if attempt == HEAD_RETRIES - 1:
+                        bad = f"{r['version']}[{arch}]：HEAD 取不到 Content-Length（{e}）"
+                        break
+                if clen is not None and clen == pkg["size"]:
+                    ok = True
                     break
-            if clen is not None and clen == r["size"]:
-                ok = True
+                if attempt < HEAD_RETRIES - 1:
+                    time.sleep(HEAD_RETRY_SLEEP)
+            if not ok:
+                if clen is not None:
+                    bad = (f"{r['version']}[{arch}]：Content-Length({clen}) 与 "
+                           f"API size({pkg['size']}) 不一致，疑似重传中")
                 break
-            if attempt < HEAD_RETRIES - 1:
-                time.sleep(HEAD_RETRY_SLEEP)
         if ok:
             keep.append(r)
-        elif clen is not None:
-            skipped.append(f"{r['version']}：Content-Length({clen}) 与 API size({r['size']}) 不一致，疑似重传中")
+        else:
+            skipped.append(bad or f"{r['version']}：稳定性检查未通过")
     return keep, skipped
 
 
@@ -361,11 +491,12 @@ def build(entries, owner):
                 "changelog": r["changelog"][:2000],
                 "updated_at": r["updated_at"],
                 "packages": {
-                    spec["arch_key"]: {
-                        "download_url": r["download_url"],
-                        "sha256": r["sha256"],
-                        "size": r["size"],
+                    arch: {
+                        "download_url": p["download_url"],
+                        "sha256": p["sha256"],
+                        "size": p["size"],
                     }
+                    for arch, p in r["packages"].items()
                 },
             }
         app = {
