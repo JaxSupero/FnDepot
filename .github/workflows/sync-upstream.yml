@@ -110,7 +110,7 @@ jobs:
                   "智能智控","教育学习","游戏地带","硬件驱动"}
           ARCH = {"all","x86","arm"}
           # 与 gen_fnpack.APP_SPECS 的 app_name 保持一致；新增应用要同时改这里
-          KNOWN = {"hermes-studio", "douyin_sparkflow"}
+          KNOWN = {"hermes-studio", "douyin_sparkflow", "octop", "octop-native"}
           for name, app in d["apps"].items():
               if name not in KNOWN:
                   errs.append(f"appname {name} 不在已收录清单 {sorted(KNOWN)} 中")
