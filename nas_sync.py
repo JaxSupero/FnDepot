@@ -127,8 +127,14 @@ def build_index(deployed=None, verbose=False):
         if deployed:
             dr = ((deployed.get("apps") or {}).get(name) or {}).get("releases") or {}
             for r in rels:
-                p = (dr.get(r["version"]) or {}).get("packages", {}).get(spec["arch_key"], {})
-                if p.get("size") != r["size"] or p.get("sha256") != r["sha256"]:
+                pkgs = r.get("packages") or {}
+                old = dr.get(r["version"]) or {}
+                old_pkgs = old.get("packages") or {}
+                if any(
+                    (old_pkgs.get(arch) or {}).get("size") != pkg.get("size")
+                    or (old_pkgs.get(arch) or {}).get("sha256") != pkg.get("sha256")
+                    for arch, pkg in pkgs.items()
+                ):
                     check.add(r["version"])
 
         stable, skipped = G.stabilize(rels, settle_minutes=G.SETTLE_MINUTES, only_versions=check)

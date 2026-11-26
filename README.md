@@ -1,7 +1,7 @@
-# FnDepot 应用源 · Hermes Studio / 抖音 SparkFlow / Octop
+# FnDepot 应用源 · Hermes Studio / Ekko Studio / 抖音 SparkFlow / Octop
 
 符合 [FnDepot 外部应用源 V2 规范](https://github.com/EWEDLCM/FnDepot/blob/main/README.md) 的第三方应用源，
-收录 **Hermes Studio**、**抖音 SparkFlow** 与 **Octop** 在 fnOS（飞牛）上的 FPK 安装包。
+收录 **Hermes Studio**、**Ekko Studio**、**抖音 SparkFlow** 与 **Octop** 在 fnOS（飞牛）上的 FPK 安装包。
 
 ## 在客户端中添加本源
 
@@ -19,6 +19,7 @@ https://github.com/<你的用户名>/FnDepot
 | 应用 | appname | 架构 | 打包者 | 上游 |
 |---|---|---|---|---|
 | Hermes Studio | `hermes-studio` | x86 | [veenyi](https://github.com/veenyi/Fnos-Hermes-Studio) | [EKKOLearnAI/hermes-studio](https://github.com/EKKOLearnAI/hermes-studio) |
+| Ekko Studio | `ekko-studio` | x86 | [JaxSupero](https://github.com/JaxSupero/ekko-studio-fpk) | [EKKOLearnAI/ekko-studio](https://github.com/EKKOLearnAI/ekko-studio) |
 | 抖音 SparkFlow | `douyin_sparkflow` | x86 | [JaxSupero](https://github.com/JaxSupero/douyin-sparkflow-fpk) | [halfwaystudent/douyin-sparkflow](https://github.com/halfwaystudent/douyin-sparkflow) |
 | Octop（Docker 版） | `octop` | all（容器按本机架构拉镜像） | [TencentCloud](https://github.com/TencentCloud/Octop) | 同左（官方自打包） |
 | Octop 本地版 | `octop-native` | x86 + arm64 | [TencentCloud](https://github.com/TencentCloud/Octop) | 同左（官方自打包） |
@@ -32,7 +33,7 @@ Octop 的 tag 形如 `v1.0.3b1`，`b1` 前没有连字符，不是合法 SemVer�
 `norm_version` 会把它规范化成 `1.0.3-b1` 作为 `releases` 的键（下载地址、size、sha256 不变）。
 
 本仓库不托管任何 FPK 文件，只提供索引。安装包直接从各自的 GitHub Releases 下载，
-因此包体（Hermes Studio 约 330MB/版本、抖音 SparkFlow 约 711MB/版本）不会占本仓库空间。
+因此包体（Hermes Studio 约 330MB/版本、Ekko Studio 约 258MiB/版本、抖音 SparkFlow 约 711MB/版本）不会占本仓库空间。
 
 ### 新增收录一个应用
 
@@ -56,6 +57,11 @@ veenyi 的每个 Release 只发布**一个** FPK，文件名不带架构后缀�
 
 抖音 SparkFlow 的 FPK 也只出 x86_64（manifest `platform = x86`，包内是 x86-64 ELF），
 因此其 `platform` 为 `["x86"]`、安装包放在 `packages.x86`。这与上游 manifest 一致，无有意偏离。
+
+Ekko Studio 的 FPK 也仅支持 x86_64，使用 `platform = ["x86"]` 与 `packages.x86`；最低 fnOS 版本为 `0.9.27`。
+它内置匹配 Web 产物的 Node.js 运行时，但 Hermes Agent 由原版 Studio 的 Agent / Runtime 管理界面安装和更新，
+首次获取 Agent / Runtime 需要联网。默认 Web 端口为 `8648`；首次登录后应立即修改默认密码，
+升级默认保留配置、凭据及已下载运行时。上游采用 Business Source License 1.1，第三方打包不授予额外商用权。
 
 ## fnpack.json 为什么是自动生成的
 
@@ -204,7 +210,8 @@ FnDepot/
 ## 规范遵循说明
 
 - `schema_version` 为字符串 `"2"`
-- `apps` 的键（`hermes-studio`、`douyin_sparkflow`、`octop`、`octop-native`）与各自 FPK manifest 中的 `appname` 完全一致（区分大小写）
+- `apps` 的键（`hermes-studio`、`ekko-studio`、`douyin_sparkflow`、`octop`、`octop-native`）与各自 FPK manifest 中的 `appname` 完全一致（区分大小写）
+- Ekko Studio 仅支持 x86，默认端口 8648，最低 fnOS 版本 0.9.27；其 Agent / Runtime 由原版 Studio 管理，首次下载需要联网
 - `categories` 取自九个固定分类，且不超过两个
 - 每个安装包均提供 `download_url`、`size`（字节整数）与 `sha256`
 - `source_info` 未使用 "FnDepot" 作为源名或作者名；`maintainer` 与 `distributor` 分别标注上游开发者与打包者
@@ -215,6 +222,9 @@ FnDepot/
 应用代码、安装包的安全性或稳定性。
 
 Hermes Studio FPK 由第三方打包，以 `package` 身份（系统用户 `hermes-studio`）运行；
+Ekko Studio FPK 同样由第三方打包，以 `package` 身份运行，仅支持 x86_64，默认端口 8648，
+首次登录后请修改默认密码，未改密前不要开放公网访问。其上游采用 Business Source License 1.1，
+本打包不授予额外商用权。
 抖音 SparkFlow FPK 同样由第三方打包，以 `package` 身份（系统用户 `douyin_sparkflow`）运行，
 其上游采用 PolyForm Noncommercial 1.0.0 许可（仅限非商业用途），与抖音官方无任何关联。
 安装前请自行评估，并仅从你信任的来源获取安装包。

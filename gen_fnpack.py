@@ -107,6 +107,37 @@ APP_SPECS = [
         "keep_versions": KEEP_VERSIONS,
     },
     {
+        "app_name": "ekko-studio",
+        "repo": "JaxSupero/ekko-studio-fpk",
+        "upstream": "https://github.com/EKKOLearnAI/ekko-studio",
+        # FPK 内置 Linux x86_64 Node/runtime 与原生模块，仅支持 x86。
+        "arch_key": "x86",
+        "platform": ["x86"],
+        "display_name": "Ekko Studio",
+        "desc": (
+            "Ekko Studio 官方 Web 发行版的非官方 fnOS 原生 FPK，仅支持 x86_64，无需 Docker。"
+            "<br/><br/>内置与官方 Web 产物匹配的 Node.js 运行时；Hermes Agent 通过原版 Studio 的 "
+            "Agent / Runtime 管理界面安装和更新，本 FPK 不独立固定、安装或追踪 Agent；首次获取 Agent / Runtime 需要联网。"
+            "<br/><br/>默认端口 8648；首次登录后请立即修改默认密码，未改密前不要开放公网访问。"
+            "升级默认保留用户配置、凭据及已下载运行时。上游采用 Business Source License 1.1，"
+            "本打包不授予额外商用权。"
+        ),
+        "categories": ["AI赋能", "系统工具"],
+        "icon_url": "https://raw.githubusercontent.com/EKKOLearnAI/ekko-studio/main/packages/desktop/build/iconLinux.png",
+        "readme_url": "https://raw.githubusercontent.com/JaxSupero/ekko-studio-fpk/main/README.md",
+        "bug_report_url": "https://github.com/JaxSupero/ekko-studio-fpk/issues",
+        "maintainer": "EKKOLearnAI",
+        "maintainer_url": "https://github.com/EKKOLearnAI/ekko-studio",
+        "distributor": "JaxSupero",
+        "distributor_url": "https://github.com/JaxSupero/ekko-studio-fpk",
+        "run_as": "package",
+        "install_type": "",
+        "is_docker": False,
+        "service_port": "8648",
+        "os_min_version": "0.9.27",
+        "keep_versions": KEEP_VERSIONS,
+    },
+    {
         "app_name": "douyin_sparkflow",
         "repo": "JaxSupero/douyin-sparkflow-fpk",
         "upstream": "https://github.com/halfwaystudent/douyin-sparkflow",
@@ -499,6 +530,8 @@ def build(entries, owner):
                     for arch, p in r["packages"].items()
                 },
             }
+            if spec.get("os_min_version"):
+                releases[r["version"]]["os_min_version"] = spec["os_min_version"]
         app = {
             "display_name": spec["display_name"],
             "desc": spec["desc"],

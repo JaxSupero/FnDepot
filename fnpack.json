@@ -4,7 +4,7 @@
     "name": "JaxSupero 的 fnOS 应用源",
     "author": "JaxSupero",
     "homepage": "https://github.com/JaxSupero/FnDepot",
-    "description": "收录 Hermes Studio、抖音 SparkFlow、Octop、Octop 本地版 的 fnOS 原生 FPK 安装包。"
+    "description": "收录 Hermes Studio、Ekko Studio、抖音 SparkFlow、Octop、Octop 本地版 的 fnOS FPK 安装包。"
   },
   "apps": {
     "hermes-studio": {
@@ -597,6 +597,43 @@
               "size": 158797270
             }
           }
+        }
+      }
+    },
+    "ekko-studio": {
+      "display_name": "Ekko Studio",
+      "desc": "Ekko Studio 官方 Web 发行版的非官方 fnOS 原生 FPK，仅支持 x86_64，无需 Docker。<br/><br/>内置与官方 Web 产物匹配的 Node.js 运行时；Hermes Agent 通过原版 Studio 的 Agent / Runtime 管理界面安装和更新，本 FPK 不独立固定、安装或追踪 Agent；首次获取 Agent / Runtime 需要联网。<br/><br/>默认端口 8648；首次登录后请立即修改默认密码，未改密前不要开放公网访问。升级默认保留用户配置、凭据及已下载运行时。上游采用 Business Source License 1.1，本打包不授予额外商用权。",
+      "platform": [
+        "x86"
+      ],
+      "categories": [
+        "AI赋能",
+        "系统工具"
+      ],
+      "icon_url": "https://raw.githubusercontent.com/EKKOLearnAI/ekko-studio/main/packages/desktop/build/iconLinux.png",
+      "readme_url": "https://raw.githubusercontent.com/JaxSupero/ekko-studio-fpk/main/README.md",
+      "bug_report_url": "https://github.com/JaxSupero/ekko-studio-fpk/issues",
+      "maintainer": "EKKOLearnAI",
+      "maintainer_url": "https://github.com/EKKOLearnAI/ekko-studio",
+      "distributor": "JaxSupero",
+      "distributor_url": "https://github.com/JaxSupero/ekko-studio-fpk",
+      "run_as": "package",
+      "install_type": "",
+      "is_docker": false,
+      "service_port": "8648",
+      "details_updated_at": "2026-11-26T00:01:17+00:00",
+      "releases": {
+        "0.8.31-1": {
+          "changelog": "# Studio 0.8.31\n\n本版基于 `61cda7e6c1d0b7b17f6394a8c4f3822e6dd36944`，上一正式版为 `v0.8.30`。\n\n- 部分依赖外部命令行工具的插件 Agent 会在未安装时提供安装指南，可直接从 Agent 列表打开。返回 Studio 或点击刷新后，列表会重新检查安装状态。 (#3902)\n- 插件 Agent 每轮回复结束后，聊天输入区会立即刷新会话的累计 Token 用量。全局模式优先使用 Agent 报告的用量，缺少时使用估算值。 (#3905)\n- 移除了打开 Studio 群聊时弹出的停用迁移提示。 (#3899)\n- 添加远程设备的弹窗会适应窄窗口。删除按钮及删除、切换设备的确认弹窗会沿用 Studio 主题主色。 (#3900)\n- 修复 macOS 桌面端连接服务失败后，恢复页面上的「重试」和「切换回本机（重启）」按钮可能无法点击的问题。 (#3901)\n- 修复桌面内置浏览器面板隐藏后，后台截图可能变得极小或空白的问题。Studio 和插件的后台截图会沿用最近一次有效的视口尺寸。 (#3904)\n\n本版经发版 PR #3908 合入。#3907 完整撤回了 #3906 的 Junie 图标改动。\n\n\n---\n\n## fnOS FPK 打包说明\n\n- 原版更新日志来源：[Ekko Studio v0.8.31](https://github.com/EKKOLearnAI/ekko-studio/releases/tag/v0.8.31)。\n- 非官方 Native x86_64 fnOS 分发包；原版 Release 资源与 Node 运行时均经校验和验证。\n- 本 FPK 不单独锁定、安装或自动更新 Hermes Agent；请通过原版 Studio 运行时 / Agent 管理界面安装和更新。\n- 用户配置、凭据和已下载运行时在 FPK 升级时保留。\n- 首次登录使用原版默认账号 admin / 123456，请立即修改密码，勿将默认登录暴露到互联网。\n- CI 冒烟测试不等同于真实 fnOS NAS 安装验证。\n- 原版 Ekko Studio 仍受 BSL 1.1 许可证约束。",
+          "updated_at": "2026-11-25T02:11:52Z",
+          "packages": {
+            "x86": {
+              "download_url": "https://github.com/JaxSupero/ekko-studio-fpk/releases/download/v0.8.31-1/ekko-studio_v0.8.31-1_x86_64.fpk",
+              "sha256": "92b750d6731267abd9e419862fa1a0762b8ed974296adc9ad8f1ead31bc82935",
+              "size": 270647226
+            }
+          },
+          "os_min_version": "0.9.27"
         }
       }
     }
