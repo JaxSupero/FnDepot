@@ -4,7 +4,7 @@
     "name": "JaxSupero 的 fnOS 应用源",
     "author": "JaxSupero",
     "homepage": "https://github.com/JaxSupero/FnDepot",
-    "description": "收录 Hermes Studio、Ekko Studio、抖音 SparkFlow、Octop、Octop 本地版 的 fnOS FPK 安装包。"
+    "description": "收录 Hermes Studio、Ekko Studio、抖音 SparkFlow、Octop、Octop 本地版 的 fnOS 原生 FPK 安装包。"
   },
   "apps": {
     "hermes-studio": {
@@ -28,7 +28,7 @@
       "install_type": "",
       "is_docker": false,
       "service_port": "8648",
-      "details_updated_at": "2026-11-26T04:56:01+00:00",
+      "details_updated_at": "2026-11-26T14:59:40+00:00",
       "releases": {
         "0.8.31-1": {
           "changelog": "Hermes Studio for fnOS — 稳定版 v0.8.31-1\n\n**打包追踪的上游版本**（由 auto-update.yml 自动对齐）：hermes-web-ui `0.8.31` ｜ hermes-agent `v0.23.4`\n\n## 本次更新（v0.8.31-1）\n- 跟随官方 GitHub Release 预构建产物（EKKOLearnAI/hermes-studio）自动对齐 hermes-web-ui 版本，比 npm 发布更及时。\n- 内置 Hermes Agent 离线源码包（按 NousResearch/hermes-agent 最新 release 标签钉版本），安装时跳过 GitHub git clone，适合 NAS 弱网环境。\n- Agent browser tools + TUI 依赖预装进 FPK，首启跳过后台 npm install，启动更快。\n- bundled node 运行时不入库，CI 用 Node v24 编译含原生 node-pty，安装走离线复制，避免 fnOS 缺 gcc 导致安装卡死。\n- 安装前自动环境检查：Node.js、8648 端口占用、清理残留进程 / IPC socket / PID 文件、修复数据目录属主。\n\n> ⚠️ 若从旧版本升级仍异常，建议先 pkill -9 -f hermes 并卸载旧版后再重装。\n\n## 安装说明\n1. 飞牛应用中心 -> 手动安装 -> 选择本 fpk。\n2. 安装后首次启动会自动在后台安装 Hermes Agent（约 1-3 分钟），请稍候。\n3. 默认监听 8648 端口，点击应用图标在浏览器打开。\n\n固定版本请从本 Release 附件下载 fnos-hermes-studio_v0.8.31-1.fpk；\n最新滚动版见 Release latest。",
@@ -145,6 +145,55 @@
         "https://raw.githubusercontent.com/veenyi/Fnos-Hermes-Studio/main/preview/preview.png"
       ]
     },
+    "ekko-studio": {
+      "display_name": "Ekko Studio",
+      "desc": "Ekko Studio 官方 Web 发行版的非官方 fnOS 原生 FPK，仅支持 x86_64，无需 Docker。<br/><br/>内置与官方 Web 产物匹配的 Node.js 运行时；Hermes Agent 通过原版 Studio 的 Agent / Runtime 管理界面安装和更新，本 FPK 不独立固定、安装或追踪 Agent；首次获取 Agent / Runtime 需要联网。<br/><br/>默认端口 8648；首次登录后请立即修改默认密码，未改密前不要开放公网访问。升级默认保留用户配置、凭据及已下载运行时。上游采用 Business Source License 1.1，本打包不授予额外商用权。",
+      "platform": [
+        "x86"
+      ],
+      "categories": [
+        "AI赋能",
+        "系统工具"
+      ],
+      "icon_url": "https://raw.githubusercontent.com/EKKOLearnAI/ekko-studio/main/packages/desktop/build/iconLinux.png",
+      "readme_url": "https://raw.githubusercontent.com/JaxSupero/ekko-studio-fpk/main/README.md",
+      "bug_report_url": "https://github.com/JaxSupero/ekko-studio-fpk/issues",
+      "maintainer": "EKKOLearnAI",
+      "maintainer_url": "https://github.com/EKKOLearnAI/ekko-studio",
+      "distributor": "JaxSupero",
+      "distributor_url": "https://github.com/JaxSupero/ekko-studio-fpk",
+      "run_as": "package",
+      "install_type": "",
+      "is_docker": false,
+      "service_port": "8648",
+      "details_updated_at": "2026-11-26T14:59:40+00:00",
+      "releases": {
+        "0.8.32-1": {
+          "changelog": "# Studio 0.8.32\n\n本版基于 `d7112d69c70043367755c8e7561ecf0937cee72c`，上一正式版为 `v0.8.31`。\n\n- 修复模型网关转换请求协议时丢失提示缓存配置的问题，覆盖 Claude、Qwen OAuth 和官方 OpenAI Chat。OpenCode Go 和 Zen 的连续请求可复用同一会话标识。 (#3913)\n- 修复 Moonshot 的缓存命中数可能被记为零的问题。流式、非流式响应和 Ekko 用量统计会区分普通输入、缓存读取与缓存写入。 (#3913)\n- 更新 Studio 的中英文输出提示，让 Agent 在改动摘要和代码评审中使用绝对路径生成可点击的本地文件链接。 (#3919)\n- 修复从 Hermes 工作进程环境启动 Studio 时，可能连错 Bridge 并导致会话无法续接的问题。Studio 会识别继承的 Worker 端点并改用默认 Broker。 (#3915)\n\n本版经发版 PR #3920 合入。\n\n\n---\n\n## fnOS FPK 打包说明\n\n- 原版更新日志来源：[Ekko Studio v0.8.32](https://github.com/EKKOLearnAI/ekko-studio/releases/tag/v0.8.32)。\n- 非官方 Native x86_64 fnOS 分发包；原版 Release 资源与 Node 运行时均经校验和验证。\n- 本 FPK 不单独锁定、安装或自动更新 Hermes Agent；请通过原版 Studio 运行时 / Agent 管理界面安装和更新。\n- 用户配置、凭据和已下载运行时在 FPK 升级时保留。\n- 首次登录使用原版默认账号 admin / 123456，请立即修改密码，勿将默认登录暴露到互联网。\n- CI 冒烟测试不等同于真实 fnOS NAS 安装验证。\n- 原版 Ekko Studio 仍受 BSL 1.1 许可证约束。",
+          "updated_at": "2026-11-26T08:39:54Z",
+          "packages": {
+            "x86": {
+              "download_url": "https://github.com/JaxSupero/ekko-studio-fpk/releases/download/v0.8.32-1/ekko-studio_v0.8.32-1_x86_64.fpk",
+              "sha256": "0bf894eab8faaf998bc740ad04ecaddfa6095b697f1229a8485cd69550996b34",
+              "size": 270678390
+            }
+          },
+          "os_min_version": "0.9.27"
+        },
+        "0.8.31-1": {
+          "changelog": "# Studio 0.8.31\n\n本版基于 `61cda7e6c1d0b7b17f6394a8c4f3822e6dd36944`，上一正式版为 `v0.8.30`。\n\n- 部分依赖外部命令行工具的插件 Agent 会在未安装时提供安装指南，可直接从 Agent 列表打开。返回 Studio 或点击刷新后，列表会重新检查安装状态。 (#3902)\n- 插件 Agent 每轮回复结束后，聊天输入区会立即刷新会话的累计 Token 用量。全局模式优先使用 Agent 报告的用量，缺少时使用估算值。 (#3905)\n- 移除了打开 Studio 群聊时弹出的停用迁移提示。 (#3899)\n- 添加远程设备的弹窗会适应窄窗口。删除按钮及删除、切换设备的确认弹窗会沿用 Studio 主题主色。 (#3900)\n- 修复 macOS 桌面端连接服务失败后，恢复页面上的「重试」和「切换回本机（重启）」按钮可能无法点击的问题。 (#3901)\n- 修复桌面内置浏览器面板隐藏后，后台截图可能变得极小或空白的问题。Studio 和插件的后台截图会沿用最近一次有效的视口尺寸。 (#3904)\n\n本版经发版 PR #3908 合入。#3907 完整撤回了 #3906 的 Junie 图标改动。\n\n\n---\n\n## fnOS FPK 打包说明\n\n- 原版更新日志来源：[Ekko Studio v0.8.31](https://github.com/EKKOLearnAI/ekko-studio/releases/tag/v0.8.31)。\n- 非官方 Native x86_64 fnOS 分发包；原版 Release 资源与 Node 运行时均经校验和验证。\n- 本 FPK 不单独锁定、安装或自动更新 Hermes Agent；请通过原版 Studio 运行时 / Agent 管理界面安装和更新。\n- 用户配置、凭据和已下载运行时在 FPK 升级时保留。\n- 首次登录使用原版默认账号 admin / 123456，请立即修改密码，勿将默认登录暴露到互联网。\n- CI 冒烟测试不等同于真实 fnOS NAS 安装验证。\n- 原版 Ekko Studio 仍受 BSL 1.1 许可证约束。",
+          "updated_at": "2026-11-25T02:11:52Z",
+          "packages": {
+            "x86": {
+              "download_url": "https://github.com/JaxSupero/ekko-studio-fpk/releases/download/v0.8.31-1/ekko-studio_v0.8.31-1_x86_64.fpk",
+              "sha256": "92b750d6731267abd9e419862fa1a0762b8ed974296adc9ad8f1ead31bc82935",
+              "size": 270647226
+            }
+          },
+          "os_min_version": "0.9.27"
+        }
+      }
+    },
     "douyin_sparkflow": {
       "display_name": "抖音 SparkFlow",
       "desc": "抖音多账号火花自动维护工具（非官方第三方项目）：自动维护好友火花标记，支持多账号管理、定时发送与 Web 控制台。<br/><br/><strong>核心能力：</strong><br/>• 扫码登录：内置 noVNC 登录桌面，在 Web 页面内直接扫码、处理验证码<br/>• 多账号管理：同时维护多个账号，独立配置好友与发送策略<br/>• 定时调度：可配置发送窗口（如 10:00-18:00/20m），自动补偿漏发<br/>• 消息模板：一言、节日祝福、自定义文本随机化发送<br/>• 可视化面板：进度环、发送明细、日志查看与失败重试<br/><br/><strong>部署说明：</strong><br/>本包为飞牛 fnOS 原生部署（非 Docker）：依赖应用中心的 Python 3.12 与 Node.js v24 运行时；Python 依赖、Playwright Chromium 与 noVNC 登录环境已预置在包内，安装后无需联网拉取依赖、无需构建镜像。数据（账号、登录态、浏览器配置、日志）保存在应用数据目录，卸载或升级默认保留。<br/><br/><strong>免责声明：</strong><br/>本项目为第三方公开源码的非官方打包，与抖音及其关联方无任何关系；仅限个人非商业用途，使用者只能操作本人拥有或已获授权的账号，自动化操作可能触发平台风控（验证、限流、封禁等），风险自负。",
@@ -165,7 +214,7 @@
       "install_type": "",
       "is_docker": false,
       "service_port": "8787",
-      "details_updated_at": "2026-11-26T04:56:01+00:00",
+      "details_updated_at": "2026-11-26T14:59:40+00:00",
       "releases": {
         "1.1.18": {
           "changelog": "抖音 SparkFlow for fnOS（原生部署，非 Docker）\n- FPK version: `1.1.18`\n- Upstream commit: `01c488f658a89677bbd6f1a660f69221530282c4`\n- Upstream date: `2026-11-22`\n\n**更新说明**\n\n上游 1 处改动涉及DouYinSparkFlow/core、DouYinSparkFlow/docs、DouYinSparkFlow/tests（如 Sync Hangzhou production hotfixes into main），详见上游仓库。打包侧：preserve upstream browser engine options in fnOS patch。\n\n---\n仅支持 x86_64；上游许可仅限非商业用途。",
@@ -300,7 +349,7 @@
       "install_type": "",
       "is_docker": true,
       "service_port": "8088",
-      "details_updated_at": "2026-11-26T04:56:01+00:00",
+      "details_updated_at": "2026-11-26T14:59:40+00:00",
       "releases": {
         "1.0.3-b7": {
           "changelog": "### 新增\n- 托管专家可选会话模式，并能使用连接器、知识库、专家回调和已启用的插件\n- 云服务器页的地域筛选改为按大区分组的下拉面板\n\n### 变更\n- 工具调用上限只拦截连续的相同调用\n- 云服务器页侧栏折叠、字号和未授权提示与对话页对齐\n\n### 修复\n- Docker 部署时仍可将宿主机目录挂进 Docker 专家\n- Telegram 回复本机器人时保留引用；记忆列表不再被过期响应覆盖\n- PostgreSQL 清理孤儿 checkpoint 时只统计，不再误删其他智能体的对话\n- 带路径的 MCP OAuth 按规范发现授权信息\n- 窄屏下 Word / PDF 左侧可以滚到；新手引导遮罩铺满窗口\n\n\n## Downloads\n\nDesktop installers bundle the browser extra only. Desktop control, OCR, and local embedding stay on the Docker full image.\n\n### Windows\n\n#### Desktop installer\n- [64-bit (Recommended)](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b7/Octop-desktop-windows-amd64-1.0.3b7.exe) | [ARM64](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b7/Octop-desktop-windows-arm64-1.0.3b7.exe)\n\n#### Portable\n- [64-bit](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b7/Octop-portable-windows-amd64-1.0.3b7.zip) | [ARM64](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b7/Octop-portable-windows-arm64-1.0.3b7.zip)\n\n### macOS\n\n#### Desktop installer\n- [Apple Silicon](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b7/Octop-desktop-darwin-arm64-1.0.3b7.dmg) | [Intel](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b7/Octop-desktop-darwin-amd64-1.0.3b7.dmg)\n\n#### Portable\n- [Apple Silicon](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b7/Octop-portable-darwin-arm64-1.0.3b7.zip) | [Intel](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b7/Octop-portable-darwin-amd64-1.0.3b7.zip)\n\n### Linux\n\n#### Desktop installer (deb)\n- [64-bit](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b7/Octop-desktop-linux-amd64-1.0.3b7.deb) | [ARM64](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b7/Octop-desktop-linux-arm64-1.0.3b7.deb)\n\n#### rpm\n- [amd64](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b7/Octop-desktop-linux-amd64-1.0.3b7.rpm) | [arm64](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b7/Octop-desktop-linux-",
@@ -436,7 +485,7 @@
       "install_type": "",
       "is_docker": false,
       "service_port": "8089",
-      "details_updated_at": "2026-11-26T04:56:01+00:00",
+      "details_updated_at": "2026-11-26T14:59:40+00:00",
       "releases": {
         "1.0.3-b7": {
           "changelog": "### 新增\n- 托管专家可选会话模式，并能使用连接器、知识库、专家回调和已启用的插件\n- 云服务器页的地域筛选改为按大区分组的下拉面板\n\n### 变更\n- 工具调用上限只拦截连续的相同调用\n- 云服务器页侧栏折叠、字号和未授权提示与对话页对齐\n\n### 修复\n- Docker 部署时仍可将宿主机目录挂进 Docker 专家\n- Telegram 回复本机器人时保留引用；记忆列表不再被过期响应覆盖\n- PostgreSQL 清理孤儿 checkpoint 时只统计，不再误删其他智能体的对话\n- 带路径的 MCP OAuth 按规范发现授权信息\n- 窄屏下 Word / PDF 左侧可以滚到；新手引导遮罩铺满窗口\n\n\n## Downloads\n\nDesktop installers bundle the browser extra only. Desktop control, OCR, and local embedding stay on the Docker full image.\n\n### Windows\n\n#### Desktop installer\n- [64-bit (Recommended)](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b7/Octop-desktop-windows-amd64-1.0.3b7.exe) | [ARM64](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b7/Octop-desktop-windows-arm64-1.0.3b7.exe)\n\n#### Portable\n- [64-bit](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b7/Octop-portable-windows-amd64-1.0.3b7.zip) | [ARM64](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b7/Octop-portable-windows-arm64-1.0.3b7.zip)\n\n### macOS\n\n#### Desktop installer\n- [Apple Silicon](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b7/Octop-desktop-darwin-arm64-1.0.3b7.dmg) | [Intel](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b7/Octop-desktop-darwin-amd64-1.0.3b7.dmg)\n\n#### Portable\n- [Apple Silicon](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b7/Octop-portable-darwin-arm64-1.0.3b7.zip) | [Intel](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b7/Octop-portable-darwin-amd64-1.0.3b7.zip)\n\n### Linux\n\n#### Desktop installer (deb)\n- [64-bit](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b7/Octop-desktop-linux-amd64-1.0.3b7.deb) | [ARM64](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b7/Octop-desktop-linux-arm64-1.0.3b7.deb)\n\n#### rpm\n- [amd64](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b7/Octop-desktop-linux-amd64-1.0.3b7.rpm) | [arm64](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b7/Octop-desktop-linux-",
@@ -597,43 +646,6 @@
               "size": 158797270
             }
           }
-        }
-      }
-    },
-    "ekko-studio": {
-      "display_name": "Ekko Studio",
-      "desc": "Ekko Studio 官方 Web 发行版的非官方 fnOS 原生 FPK，仅支持 x86_64，无需 Docker。<br/><br/>内置与官方 Web 产物匹配的 Node.js 运行时；Hermes Agent 通过原版 Studio 的 Agent / Runtime 管理界面安装和更新，本 FPK 不独立固定、安装或追踪 Agent；首次获取 Agent / Runtime 需要联网。<br/><br/>默认端口 8648；首次登录后请立即修改默认密码，未改密前不要开放公网访问。升级默认保留用户配置、凭据及已下载运行时。上游采用 Business Source License 1.1，本打包不授予额外商用权。",
-      "platform": [
-        "x86"
-      ],
-      "categories": [
-        "AI赋能",
-        "系统工具"
-      ],
-      "icon_url": "https://raw.githubusercontent.com/EKKOLearnAI/ekko-studio/main/packages/desktop/build/iconLinux.png",
-      "readme_url": "https://raw.githubusercontent.com/JaxSupero/ekko-studio-fpk/main/README.md",
-      "bug_report_url": "https://github.com/JaxSupero/ekko-studio-fpk/issues",
-      "maintainer": "EKKOLearnAI",
-      "maintainer_url": "https://github.com/EKKOLearnAI/ekko-studio",
-      "distributor": "JaxSupero",
-      "distributor_url": "https://github.com/JaxSupero/ekko-studio-fpk",
-      "run_as": "package",
-      "install_type": "",
-      "is_docker": false,
-      "service_port": "8648",
-      "details_updated_at": "2026-11-26T00:01:17+00:00",
-      "releases": {
-        "0.8.31-1": {
-          "changelog": "# Studio 0.8.31\n\n本版基于 `61cda7e6c1d0b7b17f6394a8c4f3822e6dd36944`，上一正式版为 `v0.8.30`。\n\n- 部分依赖外部命令行工具的插件 Agent 会在未安装时提供安装指南，可直接从 Agent 列表打开。返回 Studio 或点击刷新后，列表会重新检查安装状态。 (#3902)\n- 插件 Agent 每轮回复结束后，聊天输入区会立即刷新会话的累计 Token 用量。全局模式优先使用 Agent 报告的用量，缺少时使用估算值。 (#3905)\n- 移除了打开 Studio 群聊时弹出的停用迁移提示。 (#3899)\n- 添加远程设备的弹窗会适应窄窗口。删除按钮及删除、切换设备的确认弹窗会沿用 Studio 主题主色。 (#3900)\n- 修复 macOS 桌面端连接服务失败后，恢复页面上的「重试」和「切换回本机（重启）」按钮可能无法点击的问题。 (#3901)\n- 修复桌面内置浏览器面板隐藏后，后台截图可能变得极小或空白的问题。Studio 和插件的后台截图会沿用最近一次有效的视口尺寸。 (#3904)\n\n本版经发版 PR #3908 合入。#3907 完整撤回了 #3906 的 Junie 图标改动。\n\n\n---\n\n## fnOS FPK 打包说明\n\n- 原版更新日志来源：[Ekko Studio v0.8.31](https://github.com/EKKOLearnAI/ekko-studio/releases/tag/v0.8.31)。\n- 非官方 Native x86_64 fnOS 分发包；原版 Release 资源与 Node 运行时均经校验和验证。\n- 本 FPK 不单独锁定、安装或自动更新 Hermes Agent；请通过原版 Studio 运行时 / Agent 管理界面安装和更新。\n- 用户配置、凭据和已下载运行时在 FPK 升级时保留。\n- 首次登录使用原版默认账号 admin / 123456，请立即修改密码，勿将默认登录暴露到互联网。\n- CI 冒烟测试不等同于真实 fnOS NAS 安装验证。\n- 原版 Ekko Studio 仍受 BSL 1.1 许可证约束。",
-          "updated_at": "2026-11-25T02:11:52Z",
-          "packages": {
-            "x86": {
-              "download_url": "https://github.com/JaxSupero/ekko-studio-fpk/releases/download/v0.8.31-1/ekko-studio_v0.8.31-1_x86_64.fpk",
-              "sha256": "92b750d6731267abd9e419862fa1a0762b8ed974296adc9ad8f1ead31bc82935",
-              "size": 270647226
-            }
-          },
-          "os_min_version": "0.9.27"
         }
       }
     }
