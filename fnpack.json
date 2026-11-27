@@ -28,7 +28,7 @@
       "install_type": "",
       "is_docker": false,
       "service_port": "8648",
-      "details_updated_at": "2026-11-27T15:25:51+00:00",
+      "details_updated_at": "2026-11-27T23:38:25+00:00",
       "releases": {
         "0.8.32-1": {
           "changelog": "Hermes Studio for fnOS — 稳定版 v0.8.32-1\n\n**打包追踪的上游版本**（由 auto-update.yml 自动对齐）：hermes-web-ui `0.8.32` ｜ hermes-agent `v0.23.4`\n\n## 本次更新（v0.8.32-1）\n- 跟随官方 GitHub Release 预构建产物（EKKOLearnAI/hermes-studio）自动对齐 hermes-web-ui 版本，比 npm 发布更及时。\n- 内置 Hermes Agent 离线源码包（按 NousResearch/hermes-agent 最新 release 标签钉版本），安装时跳过 GitHub git clone，适合 NAS 弱网环境。\n- Agent browser tools + TUI 依赖预装进 FPK，首启跳过后台 npm install，启动更快。\n- bundled node 运行时不入库，CI 用 Node v24 编译含原生 node-pty，安装走离线复制，避免 fnOS 缺 gcc 导致安装卡死。\n- 安装前自动环境检查：Node.js、8648 端口占用、清理残留进程 / IPC socket / PID 文件、修复数据目录属主。\n\n> ⚠️ 若从旧版本升级仍异常，建议先 pkill -9 -f hermes 并卸载旧版后再重装。\n\n## 安装说明\n1. 飞牛应用中心 -> 手动安装 -> 选择本 fpk。\n2. 安装后首次启动会自动在后台安装 Hermes Agent（约 1-3 分钟），请稍候。\n3. 默认监听 8648 端口，点击应用图标在浏览器打开。\n\n固定版本请从本 Release 附件下载 fnos-hermes-studio_v0.8.32-1.fpk；\n最新滚动版见 Release latest。",
@@ -166,7 +166,7 @@
       "install_type": "",
       "is_docker": false,
       "service_port": "8648",
-      "details_updated_at": "2026-11-27T15:25:51+00:00",
+      "details_updated_at": "2026-11-27T23:38:25+00:00",
       "releases": {
         "0.8.32-2": {
           "changelog": "# Studio 0.8.32\n\n本版基于 `d7112d69c70043367755c8e7561ecf0937cee72c`，上一正式版为 `v0.8.31`。\n\n- 修复模型网关转换请求协议时丢失提示缓存配置的问题，覆盖 Claude、Qwen OAuth 和官方 OpenAI Chat。OpenCode Go 和 Zen 的连续请求可复用同一会话标识。 (#3913)\n- 修复 Moonshot 的缓存命中数可能被记为零的问题。流式、非流式响应和 Ekko 用量统计会区分普通输入、缓存读取与缓存写入。 (#3913)\n- 更新 Studio 的中英文输出提示，让 Agent 在改动摘要和代码评审中使用绝对路径生成可点击的本地文件链接。 (#3919)\n- 修复从 Hermes 工作进程环境启动 Studio 时，可能连错 Bridge 并导致会话无法续接的问题。Studio 会识别继承的 Worker 端点并改用默认 Broker。 (#3915)\n\n本版经发版 PR #3920 合入。\n\n\n---\n\n## fnOS FPK 打包说明\n\n- 原版更新日志来源：[Ekko Studio v0.8.32](https://github.com/EKKOLearnAI/ekko-studio/releases/tag/v0.8.32)。\n- 非官方 Native x86_64 fnOS 分发包；原版 Release 资源与 Node 运行时均经校验和验证。\n- 本 FPK 不单独锁定、安装或自动更新 Hermes Agent；请通过原版 Studio 运行时 / Agent 管理界面安装和更新。\n- 用户配置、凭据和已下载运行时在 FPK 升级时保留。\n- 首次登录使用原版默认账号 admin / 123456，请立即修改密码，勿将默认登录暴露到互联网。\n- CI 冒烟测试不等同于真实 fnOS NAS 安装验证。\n- 原版 Ekko Studio 仍受 BSL 1.1 许可证约束。",
@@ -226,7 +226,7 @@
       "install_type": "",
       "is_docker": false,
       "service_port": "8787",
-      "details_updated_at": "2026-11-27T15:25:51+00:00",
+      "details_updated_at": "2026-11-27T23:38:25+00:00",
       "releases": {
         "1.1.18": {
           "changelog": "抖音 SparkFlow for fnOS（原生部署，非 Docker）\n- FPK version: `1.1.18`\n- Upstream commit: `01c488f658a89677bbd6f1a660f69221530282c4`\n- Upstream date: `2026-11-22`\n\n**更新说明**\n\n上游 1 处改动涉及DouYinSparkFlow/core、DouYinSparkFlow/docs、DouYinSparkFlow/tests（如 Sync Hangzhou production hotfixes into main），详见上游仓库。打包侧：preserve upstream browser engine options in fnOS patch。\n\n---\n仅支持 x86_64；上游许可仅限非商业用途。",
@@ -361,7 +361,7 @@
       "install_type": "",
       "is_docker": true,
       "service_port": "8088",
-      "details_updated_at": "2026-11-27T15:25:51+00:00",
+      "details_updated_at": "2026-11-27T23:38:25+00:00",
       "releases": {
         "1.0.3-b8": {
           "changelog": "### 新增\n- 新增 Slack 与双模式 WhatsApp 渠道。\n- 新增 CubeSandbox 专家沙箱，以及团队技能挂载、头像共享和工作区路径支持。\n- 新增腾讯云 CLS（AgentObs）可观测接入。\n- 新增 `octop doctor db` 与 `octop doctor db --fix`，用于诊断和修复 SQLite 数据库。\n- 新增 WebDAV、腾讯云 COS、S3 远程备份目标。\n- 新增对话只读分享、Git 面板与逐轮文件变更记录。\n- 新增 Qwen Code ACP Runner，以及 GitHub、Gitea 连接器。\n- 完善 Codex 与共享记忆服务的终端接入、模型配置和状态管理。\n\n### 修复\n- 修复 SQLite 损坏恢复、备份恢复及 PostgreSQL 清理相关问题。\n- 修复工作区、供应商密钥、设置和会话访问的权限隔离问题。\n- 修复插件安装、下载、覆盖更新失败时的恢复与错误提示。\n- 修复对话卡顿、历史错序、流式 emoji 丢失及定时任务会话恢复问题。\n- 修复知识库 Embedding/Rerank 模型复用和个人专家数据隔离问题。\n\n### 变更\n- 升级 `octop-harness` 至 1.0.13，升级 `octop-memory` 至 1.0.7。\n- 支持通过 `octop.extensions` 为 Octop 安装扩展包。\n\n\n## Downloads\n\nDesktop installers bundle the browser extra only. Desktop control, OCR, and local embedding stay on the Docker full image.\n\n### Windows\n\n#### Desktop installer\n- [64-bit (Recommended)](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b8/Octop-desktop-windows-amd64-1.0.3b8.exe) | [ARM64](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b8/Octop-desktop-windows-arm64-1.0.3b8.exe)\n\n#### Portable\n- [64-bit](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b8/Octop-portable-windows-amd64-1.0.3b8.zip) | [ARM64](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b8/Octop-portable-windows-arm64-1.0.3b8.zip)\n\n### macOS\n\n#### Desktop installer\n- [Apple Silicon](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b8/Octop-desktop-darwin-arm64-1.0.3b8.dmg) | [Intel](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b8/Octop-desktop-darwin-amd64-1.0.3b8.dmg)\n\n#### Portable\n- [Apple Silicon](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b8/Octop-portable-darwin-arm64-1.0.3b8.zip) | [Intel](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b8/Octop-portable-darwin-amd64-1.0.3b8.zip)\n\n### Linux\n\n#### Desktop installer (deb)\n- [64-bit](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b8/Octop-desktop-linux-amd64-1.0.3b8.deb) | [ARM64](https://github.com/",
@@ -497,7 +497,7 @@
       "install_type": "",
       "is_docker": false,
       "service_port": "8089",
-      "details_updated_at": "2026-11-27T15:25:51+00:00",
+      "details_updated_at": "2026-11-27T23:38:25+00:00",
       "releases": {
         "1.0.3-b8": {
           "changelog": "### 新增\n- 新增 Slack 与双模式 WhatsApp 渠道。\n- 新增 CubeSandbox 专家沙箱，以及团队技能挂载、头像共享和工作区路径支持。\n- 新增腾讯云 CLS（AgentObs）可观测接入。\n- 新增 `octop doctor db` 与 `octop doctor db --fix`，用于诊断和修复 SQLite 数据库。\n- 新增 WebDAV、腾讯云 COS、S3 远程备份目标。\n- 新增对话只读分享、Git 面板与逐轮文件变更记录。\n- 新增 Qwen Code ACP Runner，以及 GitHub、Gitea 连接器。\n- 完善 Codex 与共享记忆服务的终端接入、模型配置和状态管理。\n\n### 修复\n- 修复 SQLite 损坏恢复、备份恢复及 PostgreSQL 清理相关问题。\n- 修复工作区、供应商密钥、设置和会话访问的权限隔离问题。\n- 修复插件安装、下载、覆盖更新失败时的恢复与错误提示。\n- 修复对话卡顿、历史错序、流式 emoji 丢失及定时任务会话恢复问题。\n- 修复知识库 Embedding/Rerank 模型复用和个人专家数据隔离问题。\n\n### 变更\n- 升级 `octop-harness` 至 1.0.13，升级 `octop-memory` 至 1.0.7。\n- 支持通过 `octop.extensions` 为 Octop 安装扩展包。\n\n\n## Downloads\n\nDesktop installers bundle the browser extra only. Desktop control, OCR, and local embedding stay on the Docker full image.\n\n### Windows\n\n#### Desktop installer\n- [64-bit (Recommended)](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b8/Octop-desktop-windows-amd64-1.0.3b8.exe) | [ARM64](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b8/Octop-desktop-windows-arm64-1.0.3b8.exe)\n\n#### Portable\n- [64-bit](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b8/Octop-portable-windows-amd64-1.0.3b8.zip) | [ARM64](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b8/Octop-portable-windows-arm64-1.0.3b8.zip)\n\n### macOS\n\n#### Desktop installer\n- [Apple Silicon](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b8/Octop-desktop-darwin-arm64-1.0.3b8.dmg) | [Intel](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b8/Octop-desktop-darwin-amd64-1.0.3b8.dmg)\n\n#### Portable\n- [Apple Silicon](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b8/Octop-portable-darwin-arm64-1.0.3b8.zip) | [Intel](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b8/Octop-portable-darwin-amd64-1.0.3b8.zip)\n\n### Linux\n\n#### Desktop installer (deb)\n- [64-bit](https://github.com/TencentCloud/Octop/releases/download/v1.0.3b8/Octop-desktop-linux-amd64-1.0.3b8.deb) | [ARM64](https://github.com/",
